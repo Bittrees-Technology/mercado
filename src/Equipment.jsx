@@ -575,7 +575,7 @@ export function ProductManager({
                 choose({
                   ...edit,
                   id: "",
-                  name: edit.name + " — new offer",
+                  name: edit.name.slice(0, 145) + " — new offer",
                   active: false,
                   updated_at: null,
                 })

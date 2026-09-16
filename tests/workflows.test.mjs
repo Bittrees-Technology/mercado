@@ -68,6 +68,7 @@ test("workflow routing requires a known event and one recipient", () => {
   for (const recipient of [
     "",
     "a@b.com,c@d.com",
+    "a@b@c.com",
     "A <a@b.com>",
     "a@b.com\nBcc: x@y.com",
   ])
