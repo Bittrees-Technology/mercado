@@ -5,7 +5,7 @@ import {
   sortVendorOffers,
 } from "../lib/group-catalog.mjs";
 import { filterCatalog } from "../lib/filter-catalog.mjs";
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -79,6 +79,7 @@ function Source({ item }) {
   );
 }
 export function EquipmentPage({
+  canEdit = false,
   collections,
   items,
   loading,
@@ -175,7 +176,10 @@ export function EquipmentPage({
         <span className="pill">
           {selected
             ? selected.currency
-            : groups.length + (groups.length === 1 ? " product · " : " products · ") + list.length + " offers"}
+            : groups.length +
+              (groups.length === 1 ? " product · " : " products · ") +
+              list.length +
+              " offers"}
         </span>
       </div>
       {!selected && (
@@ -296,8 +300,9 @@ export function EquipmentPage({
         </section>
       )}
       <p className="price-note">
-        Supplier prices are dated references, not confirmed hub stock. Nevada and Portugal coordinate sourcing. Final
-        configuration, taxes and delivery are confirmed in your quote.
+        Supplier prices are dated references, not confirmed hub stock. Nevada
+        and Portugal coordinate sourcing. Final configuration, taxes and
+        delivery are confirmed in your quote.
       </p>
       {!selected && (
         <p className="comparison-note">
@@ -305,6 +310,14 @@ export function EquipmentPage({
           prices run from lowest to highest within each currency; delivery and
           taxes are confirmed by quote.
         </p>
+      )}
+      {selected && canEdit && (
+        <a
+          className="secondary"
+          href={"/admin/products?item=" + encodeURIComponent(selected.id)}
+        >
+          Edit this product
+        </a>
       )}
       {selected ? (
         <div className="item-detail">
@@ -471,6 +484,7 @@ export function EquipmentPage({
   );
 }
 export function ProductManager({
+  submissions = [],
   items,
   collections,
   api,
@@ -483,6 +497,30 @@ export function ProductManager({
     [image, setImage] = useState(""),
     [filter, setFilter] = useState(""),
     [editorOpen, setEditorOpen] = useState(false);
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (initialized.current) return;
+    const q = new URLSearchParams(location.search);
+    const submission = submissions.find((s) => s.id === q.get("submission"));
+    const item = items.find(
+      (i) => i.id === (submission?.item_id || q.get("item")),
+    );
+    if (submission) {
+      choose({
+        ...item,
+        ...submission.proposed,
+        id: item?.id || "",
+        active: item?.active || false,
+        price_kind: item?.price_kind || "reference",
+        price_checked: submission.proposed.price_checked || "",
+        updated_at: item?.updated_at,
+      });
+      initialized.current = true;
+    } else if (item) {
+      choose(item);
+      initialized.current = true;
+    }
+  }, [items, submissions]);
   function choose(p) {
     setEdit(p);
     setEditorOpen(true);
@@ -495,8 +533,8 @@ export function ProductManager({
     price: "",
     currency: "USD",
     price_kind: "asking",
-    price_checked: new Date().toISOString().slice(0, 10),
-    active: true,
+    price_checked: "",
+    active: false,
   };
   const p = edit || fresh;
   return (
@@ -523,6 +561,30 @@ export function ProductManager({
             placeholder="Product name, ID or supplier"
           />
         </label>
+        {edit?.id && (
+          <>
+            <a
+              className="secondary"
+              href={equipmentLink(edit.product_id, "", edit.id)}
+            >
+              View product
+            </a>
+            <button
+              className="secondary"
+              onClick={() =>
+                choose({
+                  ...edit,
+                  id: "",
+                  name: edit.name + " — new offer",
+                  active: false,
+                  updated_at: null,
+                })
+              }
+            >
+              Duplicate as new offer
+            </button>
+          </>
+        )}
         <button className="secondary" onClick={() => choose(null)}>
           Add product
         </button>
@@ -563,13 +625,29 @@ export function ProductManager({
           onSubmit={(e) => {
             e.preventDefault();
             const data = Object.fromEntries(new FormData(e.target));
+            if (!data.id)
+              data.id =
+                (data.name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/^-|-$/g, "")
+                  .slice(0, 65) || "product") +
+                "-" +
+                crypto.randomUUID().slice(0, 8);
             run(async () => {
               await api("admin/item", {
                 ...data,
                 image_url: image,
+                create_only: !edit?.id,
+                expected_updated_at: edit?.id
+                  ? edit.edit_version || edit.updated_at
+                  : null,
                 active: data.visibility === "active",
               });
               await refresh();
+              setEdit(null);
+              setEditorOpen(false);
+              setImage("");
               notify(
                 "Product saved. Pricing and images are updated on the site.",
               );
@@ -581,10 +659,10 @@ export function ProductManager({
             <input
               name="id"
               defaultValue={p.id}
-              required
+              required={Boolean(edit?.id)}
               pattern="[a-z0-9]+(-[a-z0-9]+)*"
-              readOnly={Boolean(edit)}
-              placeholder="bitaxe-gamma-601"
+              readOnly={Boolean(edit?.id)}
+              placeholder="Generated automatically if left blank"
             />
           </label>
           <label>

@@ -8,6 +8,15 @@ export function Vendors({ user, admin, api, run, setAdmin, setNotice, busy }) {
     <section>
       <h2>Vendor integrations</h2>
       <p>
+        1. Register your business → 2. Submit products → 3. Resolve review
+        feedback → 4. Staff publish qualified listings.
+      </p>
+      {(user.vendor || user.canProducts) && (
+        <a className="secondary" href="/admin/submissions">
+          Submit or revise individual products
+        </a>
+      )}
+      <p>
         Register supplier details and a catalog feed for review. Feeds are not
         fetched automatically. Approved CSV feeds can be downloaded and reviewed
         through Products → CSV import by a product manager.

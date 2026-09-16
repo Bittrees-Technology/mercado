@@ -58,3 +58,7 @@ Chirpy messaging must never grant an offer, accept final terms or mark payment c
 - Chirpy PR [54](https://github.com/Bittrees-Technology/chirpy/pull/54) deployed safe HTTPS message links at main `af16029783c7397e85d612a66138c95f2746acb4`. No automatic link preview or destination request occurs before clicking. This completes the link-rendering prerequisite, not the sender/worker integration.
 
 External wallet delivery still requires a dedicated sender and persistent worker host/key custodian, explicit opt-in and verified inbox enrollment, opt-out and retention ownership, subscription-version checks and send reconciliation. No arbitrary client-supplied recipient or message should enter the future dispatcher. In-app records remain available while this is configured.
+
+## Additional workflow routing
+
+[Workflow automation](WORKFLOW-AUTOMATION.md) documents the new quote, vendor and product-submission rules, privacy-limited supplier RFQ exports, individual product review and five ranked follow-on examples. These rules start disabled and are separate from the existing referred-quote setting.

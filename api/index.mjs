@@ -1,3 +1,12 @@
+import {
+  workflowRule,
+  workflowInsert,
+  deliverWorkflow,
+  retryWorkflows,
+  submissionInput,
+  submissionWrite,
+  supplierBrief,
+} from "../lib/workflows.mjs";
 import { proposalInput } from "../lib/proposals.mjs";
 import {
   referralMessage,
@@ -168,6 +177,7 @@ export default async function handler(req, res) {
       ])
         await sql().query(`DELETE FROM marcada.${t} WHERE expires_at<now()`);
       await retryNotifications(sql());
+      await retryWorkflows(sql());
       return json(res, 200, { ok: true });
     }
     if (route === "catalog" && req.method === "GET") {
@@ -453,6 +463,15 @@ export default async function handler(req, res) {
         writes.push(
           db`INSERT INTO marcada.account_notifications(id,recipient,type,aggregate_id,event_key) SELECT ${randomUUID()},${ref.identity},'referral_activity',${id},${"referral/" + id} WHERE EXISTS(SELECT 1 FROM marcada.quotes WHERE id=${id}) ON CONFLICT(event_key) DO NOTHING`,
         );
+      writes.push(
+        workflowInsert(db, {
+          key: "quote/" + id,
+          kind: "quote_received",
+          quoteId: id,
+          summary: `Quote ${id} · collection ${product} · product ${itemId || "not selected"} · quantity ${quantity}. Review requirements and download the supplier request brief in Mercado.`,
+          path: "/admin/quotes",
+        }),
+      );
       const result = await db.transaction(writes);
       if (!result[0].length) {
         const [existing] =
@@ -476,6 +495,9 @@ export default async function handler(req, res) {
           /* Persisted quote and outbox remain recoverable. */
         }
       }
+      try {
+        await deliverWorkflow(db, "quote/" + id);
+      } catch {}
       return json(res, 201, { id });
     }
     if (route === "quote-accept" && req.method === "POST") {
@@ -602,6 +624,118 @@ export default async function handler(req, res) {
       return json(res, 403, { error: "Quote manager access required" });
     if ((route === "admin/item" || route === "admin/image") && !u.canProducts)
       return json(res, 403, { error: "Product manager access required" });
+    if (route === "admin/workflow-rule" && req.method === "POST") {
+      if (!u.owner) return json(res, 403, { error: "Owner access required" });
+      const r = workflowRule(body);
+      if (r.enabled && (!process.env.MAIL_FROM || !process.env.RESEND_API_KEY))
+        return json(res, 400, {
+          error:
+            "Configure the verified email sender before enabling this rule.",
+        });
+      await sql()`UPDATE marcada.workflow_rules SET recipient=${r.recipient},enabled=${r.enabled},updated_at=now() WHERE kind=${r.kind}`;
+      await audit(u.identity, "workflow_rule", r.kind);
+      return json(res, 200, { ok: true });
+    }
+    if (route === "admin/workflow-retry" && req.method === "POST") {
+      if (!u.owner) return json(res, 403, { error: "Owner access required" });
+      await limited(req, "workflow-retry", 10);
+      return json(
+        res,
+        200,
+        await deliverWorkflow(sql(), textField(body.event_key, 200)),
+      );
+    }
+    if (route === "admin/supplier-brief" && req.method === "POST") {
+      if (!u.canQuotes)
+        return json(res, 403, { error: "Quote manager access required" });
+      if (!uuid(body.id)) return json(res, 400, { error: "Invalid quote" });
+      const [q] =
+        await sql()`SELECT q.id,q.item_id,q.quantity,p.name,i.name AS item_name FROM marcada.quotes q JOIN marcada.products p ON p.id=q.product_id LEFT JOIN marcada.items i ON i.id=q.item_id WHERE q.id=${body.id}`;
+      if (!q) return json(res, 404, { error: "Quote not found" });
+      await audit(u.identity, "export_supplier_brief", q.id);
+      return json(res, 200, { brief: supplierBrief(q) });
+    }
+    if (route === "admin/product-submission" && req.method === "POST") {
+      if (!u.vendor && !u.canProducts)
+        return json(res, 403, { error: "Vendor or catalog access required" });
+      await limited(req, "product-submission", 20);
+      const id = body.id || randomUUID(),
+        itemId = body.item_id || null,
+        revision = body.revision || 0;
+      if (!uuid(id) || !Number.isInteger(revision) || revision < 0)
+        return json(res, 400, { error: "Invalid submission revision" });
+      const proposed = submissionInput(body);
+      if (
+        !(
+          await sql()`SELECT 1 FROM marcada.products WHERE id=${proposed.product_id} AND active`
+        ).length
+      )
+        return json(res, 400, { error: "Unknown collection" });
+      if (
+        itemId &&
+        !(
+          await sql()`SELECT 1 FROM marcada.items WHERE id=${itemId} AND active`
+        ).length
+      )
+        return json(res, 400, { error: "Unknown product" });
+      const db = sql(),
+        mutation = randomUUID(),
+        key = "product/" + id + "/" + (revision + 1);
+      const results = await db.transaction([
+        submissionWrite(db, {
+          id,
+          identity: u.identity,
+          itemId,
+          proposed,
+          mutation,
+          revision,
+        }),
+        workflowInsert(db, {
+          key,
+          kind: "product_submitted",
+          submissionId: id,
+          revision: revision + 1,
+          identity: u.identity,
+          mutation,
+          summary:
+            "A product submission is ready for catalog review. Details remain in the authenticated review queue.",
+          path: "/admin/submissions",
+        }),
+      ]);
+      if (!results[0].length)
+        return json(res, 409, {
+          error:
+            "Submission changed or belongs to another account. Reload before editing.",
+        });
+      await audit(u.identity, "submit_product", id);
+      try {
+        await deliverWorkflow(db, key);
+      } catch {}
+      return json(res, 200, results[0][0]);
+    }
+    if (route === "admin/product-submission-review" && req.method === "POST") {
+      if (!u.canProducts)
+        return json(res, 403, { error: "Catalog access required" });
+      if (
+        !uuid(body.id) ||
+        !Number.isInteger(body.revision) ||
+        !["reviewed", "changes_requested"].includes(body.status)
+      )
+        return json(res, 400, { error: "Invalid review" });
+      const note = String(body.note || "").slice(0, 2000);
+      if (body.status === "changes_requested" && !note.trim())
+        return json(res, 400, {
+          error: "Explain what the vendor needs to change.",
+        });
+      const saved =
+        await sql()`UPDATE marcada.product_submissions SET status=${body.status},review_note=${note},updated_at=now() WHERE id=${body.id} AND revision=${body.revision} AND status='submitted' RETURNING id`;
+      if (!saved.length)
+        return json(res, 409, {
+          error: "Submission changed. Reload before reviewing.",
+        });
+      await audit(u.identity, "review_product", body.id + ":" + body.status);
+      return json(res, 200, { ok: true });
+    }
     if (route === "admin/image" && req.method === "POST") {
       await limited(req, "image-upload", 20);
       const m = imageUpload(body.image),
@@ -619,11 +753,11 @@ export default async function handler(req, res) {
       )
         return json(res, 400, { error: "Unknown collection" });
       const saved =
-        await sql()`INSERT INTO marcada.items(id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status) VALUES(${p.id},${p.product_id},${p.name},${p.description},${p.price},${p.currency},${p.price_kind},${p.price_checked},${p.source_url},${p.source_name},${p.image_url},${p.image_credit},${p.hashrate || ""},${p.model_group || ""},${p.specifications},${p.active},${p.supplier_region},${p.tax_note},${p.configuration_note},${p.supplier_status}) ON CONFLICT(id) DO UPDATE SET product_id=EXCLUDED.product_id,name=EXCLUDED.name,description=EXCLUDED.description,price=EXCLUDED.price,currency=EXCLUDED.currency,price_kind=EXCLUDED.price_kind,price_checked=EXCLUDED.price_checked,source_url=EXCLUDED.source_url,source_name=EXCLUDED.source_name,image_url=EXCLUDED.image_url,image_credit=EXCLUDED.image_credit,hashrate=EXCLUDED.hashrate,model_group=EXCLUDED.model_group,specifications=EXCLUDED.specifications,active=EXCLUDED.active,supplier_region=EXCLUDED.supplier_region,tax_note=EXCLUDED.tax_note,configuration_note=EXCLUDED.configuration_note,supplier_status=EXCLUDED.supplier_status,updated_at=now() WHERE ${body.create_only !== true} RETURNING id`;
+        await sql()`INSERT INTO marcada.items(id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status) VALUES(${p.id},${p.product_id},${p.name},${p.description},${p.price},${p.currency},${p.price_kind},${p.price_checked},${p.source_url},${p.source_name},${p.image_url},${p.image_credit},${p.hashrate || ""},${p.model_group || ""},${p.specifications},${p.active},${p.supplier_region},${p.tax_note},${p.configuration_note},${p.supplier_status}) ON CONFLICT(id) DO UPDATE SET product_id=EXCLUDED.product_id,name=EXCLUDED.name,description=EXCLUDED.description,price=EXCLUDED.price,currency=EXCLUDED.currency,price_kind=EXCLUDED.price_kind,price_checked=EXCLUDED.price_checked,source_url=EXCLUDED.source_url,source_name=EXCLUDED.source_name,image_url=EXCLUDED.image_url,image_credit=EXCLUDED.image_credit,hashrate=EXCLUDED.hashrate,model_group=EXCLUDED.model_group,specifications=EXCLUDED.specifications,active=EXCLUDED.active,supplier_region=EXCLUDED.supplier_region,tax_note=EXCLUDED.tax_note,configuration_note=EXCLUDED.configuration_note,supplier_status=EXCLUDED.supplier_status,updated_at=now() WHERE ${body.create_only !== true} AND (${body.expected_updated_at || null}::timestamptz IS NULL OR marcada.items.updated_at=${body.expected_updated_at || null}::timestamptz) RETURNING id`;
       if (!saved.length)
         return json(res, 409, {
           error:
-            "Product ID already exists. Enable updates or choose a new ID.",
+            "Product already exists or was changed by another editor. Reload before saving, or use a new ID.",
         });
       await audit(u.identity, "save_product", p.id);
       return json(res, 200, { id: p.id });
@@ -679,17 +813,60 @@ export default async function handler(req, res) {
           error: "Enter a feed URL or select manual integration",
         });
       const notes = String(body.notes || "").slice(0, 2000);
-      await sql()`INSERT INTO marcada.vendor_integrations(identity,name,website,contact_email,feed_url,feed_format,notes,status) VALUES(${identity},${name},${website},${contact},${feed},${format},${notes},${status}) ON CONFLICT(identity) DO UPDATE SET name=EXCLUDED.name,website=EXCLUDED.website,contact_email=EXCLUDED.contact_email,feed_url=EXCLUDED.feed_url,feed_format=EXCLUDED.feed_format,notes=EXCLUDED.notes,status=EXCLUDED.status,updated_at=now()`;
+      const db = sql();
+      const vendorWrites = [
+        db`INSERT INTO marcada.vendor_integrations(identity,name,website,contact_email,feed_url,feed_format,notes,status) VALUES(${identity},${name},${website},${contact},${feed},${format},${notes},${status}) ON CONFLICT(identity) DO UPDATE SET name=EXCLUDED.name,website=EXCLUDED.website,contact_email=EXCLUDED.contact_email,feed_url=EXCLUDED.feed_url,feed_format=EXCLUDED.feed_format,notes=EXCLUDED.notes,status=EXCLUDED.status,updated_at=now()`,
+      ];
+      const eventKey =
+        "vendor/" +
+        hash(
+          JSON.stringify([
+            identity,
+            name,
+            website,
+            contact,
+            feed,
+            format,
+            notes,
+            status,
+          ]),
+        );
+      if (status === "submitted")
+        vendorWrites.push(
+          workflowInsert(db, {
+            key: eventKey,
+            kind: "vendor_submitted",
+            summary:
+              "A vendor integration is ready for review. Open the vendor queue to inspect the submitted business details and feed.",
+            path: "/admin/vendors",
+          }),
+        );
+      await db.transaction(vendorWrites);
+      if (status === "submitted")
+        try {
+          await deliverWorkflow(db, eventKey);
+        } catch {}
       await audit(u.identity, "save_vendor_integration", identity);
       return json(res, 200, { ok: true });
     }
     if (route === "admin" && req.method === "GET") {
       return json(res, 200, {
+        workflowRules: u.owner
+          ? await sql()`SELECT * FROM marcada.workflow_rules ORDER BY kind`
+          : [],
+        workflowDeliveries: u.owner
+          ? await sql()`SELECT event_key,kind,status,attempts,created_at,payload->'to' AS recipients FROM marcada.workflow_outbox ORDER BY created_at DESC LIMIT 50`
+          : [],
+        productSubmissions: u.canProducts
+          ? await sql()`SELECT * FROM marcada.product_submissions ORDER BY updated_at DESC LIMIT 300`
+          : u.vendor
+            ? await sql()`SELECT * FROM marcada.product_submissions WHERE identity=${u.identity} ORDER BY updated_at DESC LIMIT 100`
+            : [],
         notificationSettings: u.owner
           ? await notificationSettings(sql())
           : null,
         items: u.canProducts
-          ? await sql()`SELECT * FROM marcada.items ORDER BY product_id,name`
+          ? await sql()`SELECT *,updated_at::text AS edit_version FROM marcada.items ORDER BY product_id,name`
           : [],
         vendors: u.canVendors
           ? await sql()`SELECT * FROM marcada.vendor_integrations ORDER BY name`

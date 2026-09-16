@@ -1,3 +1,5 @@
+import { WorkflowRules, SupplierBriefButton } from "./WorkflowTools.jsx";
+import { ProductSubmissions } from "./ProductSubmissions.jsx";
 import React, { useState, useEffect } from "react";
 import { ProductManager } from "./Equipment.jsx";
 import { Vendors } from "./Vendors.jsx";
@@ -58,6 +60,7 @@ export function AdminPages({
     ["offers", "Dealer offers", user?.canDeals],
     ["quotes", "Quotes", user?.canQuotes],
     ["vendors", "Vendors", user?.canVendors || user?.vendor],
+    ["submissions", "Product submissions", user?.canProducts || user?.vendor],
     ["team", "Team access", user?.owner],
     ["notifications", "Notifications", user?.owner],
   ];
@@ -208,6 +211,7 @@ export function AdminPages({
                   {" "}
                   <ProductManager
                     items={admin.items || []}
+                    submissions={admin.productSubmissions || []}
                     collections={products}
                     api={api}
                     run={run}
@@ -225,8 +229,26 @@ export function AdminPages({
                   {...{ user, admin, api, run, setAdmin, setNotice, busy }}
                 />
               )}
+              {page === "submissions" && (user.canProducts || user.vendor) && (
+                <ProductSubmissions
+                  {...{
+                    user,
+                    admin,
+                    items,
+                    products,
+                    api,
+                    run,
+                    setAdmin,
+                    setNotice,
+                    busy,
+                  }}
+                />
+              )}
               {page === "notifications" && user.owner && (
                 <section>
+                  <WorkflowRules
+                    {...{ admin, api, run, setAdmin, setNotice, busy }}
+                  />
                   <h2>Referral email notifications</h2>
                   <p>
                     Send new referred quote submissions to your operations
@@ -626,6 +648,12 @@ export function AdminPages({
                       </strong>
                       <p className="identity">{q.identity}</p>
                       <p>{q.details}</p>
+                      <SupplierBriefButton quote={q} {...{ api, run }} />
+                      <small>
+                        Brief excludes customer identity, free-text
+                        requirements, referral details and private terms. Review
+                        before sharing.
+                      </small>
                       {q.offer_snapshot && (
                         <p>
                           Private offer reference: {q.offer_snapshot.dealer} ·{" "}

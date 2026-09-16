@@ -63,3 +63,12 @@ INSERT INTO marcada.referral_codes(code,identity) SELECT referral,identity FROM 
 ALTER TABLE marcada.items ADD COLUMN IF NOT EXISTS model_group text NOT NULL DEFAULT '';
 ALTER TABLE marcada.items DROP CONSTRAINT IF EXISTS items_currency_check;
 ALTER TABLE marcada.items ADD CONSTRAINT items_currency_check CHECK(currency IN ('USD','EUR','GBP','MXN','CAD','AUD'));
+
+CREATE TABLE IF NOT EXISTS marcada.workflow_rules(kind text PRIMARY KEY CHECK(kind IN ('quote_received','vendor_submitted','product_submitted')),recipient text NOT NULL DEFAULT '',enabled boolean NOT NULL DEFAULT false,updated_at timestamptz NOT NULL DEFAULT now());
+INSERT INTO marcada.workflow_rules(kind) VALUES('quote_received'),('vendor_submitted'),('product_submitted') ON CONFLICT DO NOTHING;
+CREATE TABLE IF NOT EXISTS marcada.workflow_outbox(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),event_key text NOT NULL UNIQUE,kind text NOT NULL,payload jsonb NOT NULL,status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','sending','accepted','needs_review')),attempts integer NOT NULL DEFAULT 0,first_attempt_at timestamptz,locked_until timestamptz,next_attempt_at timestamptz NOT NULL DEFAULT now(),provider_id text,created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS workflow_outbox_pending ON marcada.workflow_outbox(status,next_attempt_at);
+CREATE TABLE IF NOT EXISTS marcada.product_submissions(id uuid PRIMARY KEY,identity text NOT NULL,item_id text REFERENCES marcada.items(id),proposed jsonb NOT NULL,status text NOT NULL DEFAULT 'submitted' CHECK(status IN ('submitted','reviewed','changes_requested')),revision integer NOT NULL DEFAULT 1,review_note text NOT NULL DEFAULT '',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS product_submissions_identity ON marcada.product_submissions(identity,updated_at DESC);
+
+ALTER TABLE marcada.product_submissions ADD COLUMN IF NOT EXISTS mutation_id uuid NOT NULL DEFAULT gen_random_uuid();

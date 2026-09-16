@@ -7,6 +7,8 @@ Marketplace infrastructure for product discovery, dealer offers, referral attrib
 ## Capabilities
 
 - Product collections, pricing, source metadata, editable images and catalog filters.
+- Direct product-edit links, duplicate offers and vendor revisions with catalog review.
+- Configurable operations alerts and privacy-limited supplier RFQ exports.
 - Reviewed model groups with vendor offers ranked by price within each currency.
 - Public dealer offers and private deals with explicit access controls.
 - Member referral codes and shareable links, attributed to customer quote requests.
@@ -32,7 +34,7 @@ Direct checkout and payouts are not enabled. Supplier reference prices and avail
 | Dealer manager | Products and offers |
 | Support | Customer quotes, proposals and notification retries |
 | Vendor manager | All vendor integration submissions and review statuses |
-| Vendor | Own integration submission only |
+| Vendor | Own integration and individual product submissions |
 
 Vendors register contact details and public CSV/JSON feed URLs for review. Vendor edits return submissions to draft or submitted status. Approval does not enable synchronization or publish products. Product managers review CSV data through the existing importer; automated feed fetching and credential storage are not enabled. Roles can be revoked without deleting vendor records.
 
@@ -74,3 +76,5 @@ See [initial sourcing research](SOURCING-RESEARCH.md) and the [300-listing expan
 Regional sourcing evidence and comparison-group administration are documented in [US, Mexico and Western Europe sourcing](SOURCING-US-MEXICO-EUROPE.md).
 
 The [additional regional sourcing pass](SOURCING-ROUND5.md) records subsequent qualified vendors, product evidence and exclusions.
+
+See [workflow automation](WORKFLOW-AUTOMATION.md) for routing, vendor submissions and the ranked funnel improvements.

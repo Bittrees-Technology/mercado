@@ -1767,3 +1767,8 @@ button:disabled {
 .vendor-comparison button {
   margin-top: 0.7rem;
 }
+
+.admin-page dd { margin: 0 0 12px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.admin-page dt { font-weight: 600; margin-top: 8px; }
+.admin-page .record > .secondary { margin: 8px 8px 8px 0; display: inline-flex; }
+.admin-page .record > small { display: block; overflow-wrap: anywhere; }

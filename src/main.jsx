@@ -670,6 +670,7 @@ function App() {
           </>
         ) : (
           <EquipmentPage
+            canEdit={user?.canProducts}
             collections={products}
             items={items}
             loading={loading}
