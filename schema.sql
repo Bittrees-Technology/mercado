@@ -72,3 +72,6 @@ CREATE TABLE IF NOT EXISTS marcada.product_submissions(id uuid PRIMARY KEY,ident
 CREATE INDEX IF NOT EXISTS product_submissions_identity ON marcada.product_submissions(identity,updated_at DESC);
 
 ALTER TABLE marcada.product_submissions ADD COLUMN IF NOT EXISTS mutation_id uuid NOT NULL DEFAULT gen_random_uuid();
+
+ALTER TABLE marcada.referral_codes DROP CONSTRAINT IF EXISTS referral_codes_code_check;
+ALTER TABLE marcada.referral_codes ADD CONSTRAINT referral_codes_code_check CHECK(code ~ '^[a-z0-9][a-z0-9-]{2,30}[a-z0-9]$');

@@ -1,3 +1,4 @@
+import { customReferralCode, validReferralCode } from "../lib/referrals.mjs";
 import {
   workflowRule,
   workflowInsert,
@@ -322,14 +323,22 @@ export default async function handler(req, res) {
     if (!u) return json(res, 401, { error: "Sign in to continue" });
     if (route === "referrals/new" && req.method === "POST") {
       await limited(req, "referral-code", 5);
-      const code = token().slice(0, 16);
+      const code = body.code === undefined ? token().slice(0, 16) : customReferralCode(body.code);
       const db = sql();
+      if (code === u.referral) return json(res, 200, { referral: code });
+      const taken = await db`SELECT 1 FROM marcada.users WHERE referral=${code} UNION SELECT 1 FROM marcada.referral_codes WHERE code=${code}`;
+      if (taken.length) return json(res, 409, { error: "That code is already in use. Choose another." });
+      try {
       await db.transaction([
         db`INSERT INTO marcada.referral_codes(code,identity) SELECT referral,identity FROM marcada.users WHERE identity=${u.identity} ON CONFLICT(code) DO NOTHING`,
         db`INSERT INTO marcada.referral_codes(code,identity) VALUES(${code},${u.identity})`,
         db`UPDATE marcada.users SET referral=${code} WHERE identity=${u.identity}`,
         db`INSERT INTO marcada.audit(id,actor,action,detail) VALUES(${randomUUID()},${u.identity},'new_referral_code',${code})`,
       ]);
+      } catch (error) {
+        if (error.code === "23505") return json(res, 409, { error: "That code is already in use. Choose another." });
+        throw error;
+      }
       return json(res, 201, { referral: code });
     }
     if (route === "notifications" && req.method === "GET") {
@@ -375,10 +384,10 @@ export default async function handler(req, res) {
       const referral = String(body.referral || "")
         .trim()
         .toLowerCase();
-      if (referral && !/^[a-f0-9]{16}$/.test(referral))
+      if (referral && !validReferralCode(referral))
         return json(res, 400, {
           error:
-            "Enter a valid 16-character member referral code, or clear the field.",
+            "Enter a valid member referral code (4–32 letters, numbers or hyphens), or clear the field.",
         });
       if (referral && referral === u.referral)
         return json(res, 400, {

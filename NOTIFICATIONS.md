@@ -62,3 +62,15 @@ External wallet delivery still requires a dedicated sender and persistent worker
 ## Additional workflow routing
 
 [Workflow automation](WORKFLOW-AUTOMATION.md) documents the new quote, vendor and product-submission rules, privacy-limited supplier RFQ exports, individual product review and five ranked follow-on examples. These rules start disabled and are separate from the existing referred-quote setting.
+
+## Custom referral codes
+
+Members can choose a code under Referrals → Choose a custom code. Codes are normalized to lowercase and must contain 4–32 letters, numbers or hyphens, with a letter or number at either end. Existing and historical codes cannot be claimed by another member. Official-looking names and the 16-character hexadecimal namespace used by generated codes are reserved.
+
+Available valid codes activate immediately. There is no staff approval queue or code-creation email; creation is recorded in the audit log. Existing generated codes and previous custom codes remain attributed to their original member.
+
+A shared `?ref=code` URL fills the quote referral field. The browser retains it in session storage, and the customer may replace or clear it before submitting. On submission, the server validates ownership, blocks self-referrals (including linked email/wallet accounts), and saves the code with the quote, product, quantity and customer identity. The referring member receives a private in-app activity notice without customer details. An enabled operations email rule sends the configured operations recipient the quote details; only owners can configure that recipient. Code creation is separate from referral-use notification.
+
+This is quote attribution, not a click-to-sale conversion ledger, commission calculation or payout system. A new code does not establish a commercial commission agreement.
+
+On 16 September 2026, no referral operations recipient was configured and all three general workflow email rules were disabled. Confirm current settings in Admin → Notifications before relying on email delivery.

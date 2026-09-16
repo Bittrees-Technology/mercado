@@ -41,6 +41,18 @@ try {
   assert.equal((await req('admin/supplier-brief',{id:q.data.id},vendor)).status,403);
   const brief=await req('admin/supplier-brief',{id:q.data.id},owner);assert.equal(brief.status,200);assert.equal(brief.data.brief.quantity,6);assert.ok(!JSON.stringify(brief).includes('Confidential'));assert.ok(!JSON.stringify(brief).includes(customer));
   assert.ok(!JSON.stringify(mail).includes('Confidential'));
+  const custom=await req('referrals/new',{code:'  Vendor-Mining  '},vendor);
+  assert.equal(custom.status,201);assert.equal(custom.data.referral,'vendor-mining');
+  assert.equal((await req('referrals/new',{code:'vendor-mining'},other)).status,409);
+  assert.equal((await req('referrals/new',{code:'admin'},other)).status,400);
+  const rotate=await req('referrals/new',{code:'vendor-hardware'},vendor);assert.equal(rotate.status,201);
+  for(const code of ['VENDOR-MINING','vendor-hardware']) {
+    const referralQuote=await req('quotes',{product:'asic',quantity:2,details:'Custom code attribution',referral:code,request_key:randomUUID()},customer);
+    assert.equal(referralQuote.status,201,JSON.stringify(referralQuote));
+    const [savedRef]=await sql`SELECT referral FROM marcada.quotes WHERE id=${referralQuote.data.id}`;
+    assert.equal(savedRef.referral,code.toLowerCase());
+  }
+  assert.equal((await req('quotes',{product:'asic',quantity:1,details:'Own code check',referral:'vendor-mining',request_key:randomUUID()},vendor)).status,400);
   const vbody={name:'Audit vendor',website:'https://example.com',contact_email:vendor,feed_format:'manual',status:'submitted'};
   assert.equal((await req('admin/vendor',vbody,vendor)).status,200);const count=mail.length;
   assert.equal((await req('admin/vendor',vbody,vendor)).status,200);assert.equal(mail.length,count);

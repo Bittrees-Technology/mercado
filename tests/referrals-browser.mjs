@@ -54,9 +54,9 @@ try {
     const page = await context.newPage();
     await page.goto(base);
     await page.getByRole("button", { name: "Referrals", exact: true }).click();
-    await page.getByText("Replace your code", { exact: true }).click();
+    await page.getByText("Choose a custom code", { exact: true }).click();
     await page
-      .getByRole("button", { name: "Request a new code", exact: true })
+      .getByRole("button", { name: "Generate a code instead", exact: true })
       .click();
     await page.waitForFunction(
       () =>

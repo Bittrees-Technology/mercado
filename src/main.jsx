@@ -986,8 +986,8 @@ function App() {
                   await navigator.clipboard.writeText(user.referral);
                   setNotice("Referral code copied.");
                 })}
-                renew={() => run(async () => {
-                  const result = await api("referrals/new", {});
+                renew={(code) => run(async () => {
+                  const result = await api("referrals/new", code === undefined ? {} : { code });
                   setUser((current) => ({ ...current, referral: result.referral }));
                   setNotice("New code ready. Your previous codes and links still work.");
                 })}
