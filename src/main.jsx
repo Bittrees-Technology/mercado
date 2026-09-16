@@ -1,3 +1,4 @@
+import { useAccountNavigation } from "./useAccountNavigation.jsx";
 import { ReferralPanel } from "./ReferralPanel.jsx";
 import { NotificationPage } from "./NotificationPage.jsx";
 import { WalletPicker } from "./WalletPicker.jsx";
@@ -42,7 +43,7 @@ async function api(path, body) {
       : {},
   );
   const d = await r.json();
-  if (!r.ok) throw Error(d.error || "Please try again");
+  if (!r.ok) throw Object.assign(Error(d.error || "Please try again"), { status: r.status });
   return d;
 }
 const categories = [
@@ -110,6 +111,10 @@ function Hardware({ kind = "bitaxe", large = false }) {
   );
 }
 function App() {
+  const { route, navigate } = useAccountNavigation();
+  const initialRoute = useRef(true);
+  const accountRequest = useRef(0);
+  const [accountLoading, setAccountLoading] = useState(true);
   const quoteAttempt = useRef(null);
   const [signingProvider, setSigningProvider] = useState(null);
   const [products, setProducts] = useState([]),
@@ -150,20 +155,48 @@ function App() {
   const [selected, setSelected] = useState(
     initial.searchParams.get("product") || "",
   );
-  async function refresh() {
-    const c = await api("catalog");
-    setProducts(c.products);
-    setOffers(c.offers);
-    setItems(c.items || []);
+  async function loadAccount() {
+    const request = ++accountRequest.current;
+    setAccountLoading(true);
     try {
+      if (location.pathname.startsWith("/admin")) {
+        try {
+          const data = await api("admin");
+          if (request !== accountRequest.current) return;
+          setUser(data.user); setAdmin(data);
+          if (modal === "account") {
+            const account = await api("me");
+            if (request === accountRequest.current) setQuotes(account.quotes);
+          }
+          return;
+        } catch (e) { if (e.status !== 403) throw e; }
+      }
       const m = await api("me");
-      setUser(m.user);
-      setQuotes(m.quotes);
-    } catch {
-      setUser(null);
+      if (request !== accountRequest.current) return;
+      setUser(m.user); setQuotes(m.quotes);
+    } catch (e) {
+      if (request !== accountRequest.current) return;
+      setAdmin(null);
+      if (e.status === 401) { setUser(null); setQuotes([]); }
+      else setError(e.message);
+    } finally {
+      if (request === accountRequest.current) setAccountLoading(false);
     }
-    setLoading(false);
   }
+  async function refresh() {
+    await Promise.all([
+      api("catalog").then((c) => {
+        setProducts(c.products); setOffers(c.offers); setItems(c.items || []);
+      }).finally(() => setLoading(false)),
+      loadAccount(),
+    ]);
+  }
+  useEffect(() => {
+    if (initialRoute.current) { initialRoute.current = false; return; }
+    setAdmin(null); setModal(null); setError(""); setNotice("");
+    loadAccount();
+    return () => { accountRequest.current++; };
+  }, [route]);
   useEffect(() => {
     if (!modal) return;
     const previous = document.activeElement;
@@ -213,16 +246,12 @@ function App() {
     }
   }
   useEffect(() => {
-    if (location.pathname.startsWith("/admin") && user?.staff)
-      api("admin")
-        .then(setAdmin)
-        .catch((e) => setError(e.message));
-  }, [user?.identity, user?.role]);
-  useEffect(() => {
     if (!signingProvider?.on || !user?.identity.startsWith("0x")) return;
     const identity = user.identity.toLowerCase();
     const changed = (accounts) => {
       if (!accounts?.some((a) => a.toLowerCase() === identity)) {
+        accountRequest.current++;
+        setAccountLoading(false);
         setUser(null);
         setAdmin(null);
         setQuotes([]);
@@ -249,7 +278,7 @@ function App() {
     };
   }, [signingProvider, user?.identity]);
   async function openAdmin() {
-    location.href = "/admin";
+    navigate("/admin");
   }
   function close() {
     setModal(null);
@@ -257,6 +286,12 @@ function App() {
     setNotice("");
   }
   function open(value) {
+    if (value === "account" && user) {
+      const identity = user.identity, request = accountRequest.current;
+      api("me").then((m) => {
+        if (request === accountRequest.current && m.user?.identity === identity) { setUser(m.user); setQuotes(m.quotes); }
+      }).catch((e) => setError(e.message));
+    }
     if (value?.type === "quote") quoteAttempt.current = null;
     setModal(value);
     setError("");
@@ -407,11 +442,14 @@ function App() {
         </button>
       </header>
       <main>
-        {location.pathname.startsWith("/account/notifications") ? (
+        {accountLoading && !user && (location.pathname.startsWith("/admin") || location.pathname.startsWith("/account/notifications")) ? (
+          <section className="equipment-page" role="status">Loading your workspace…</section>
+        ) : location.pathname.startsWith("/account/notifications") ? (
           <NotificationPage user={user} api={api} open={open} />
         ) : location.pathname.startsWith("/admin") ? (
-          <AdminPages
+          <AdminPages key={route}
             {...{
+              navigate,
               error,
               notice,
               user,
@@ -963,6 +1001,7 @@ function App() {
                   className="text-link"
                   onClick={() =>
                     run(async () => {
+                      accountRequest.current++;
                       await api("auth/logout", {});
                       setUser(null);
                       await refresh();

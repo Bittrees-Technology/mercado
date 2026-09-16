@@ -5,6 +5,7 @@ import { ProductManager } from "./Equipment.jsx";
 import { Vendors } from "./Vendors.jsx";
 import { Plus, ExternalLink } from "lucide-react";
 export function AdminPages({
+  navigate = (path) => { location.href = path; },
   error,
   notice,
   user,
@@ -98,7 +99,7 @@ export function AdminPages({
         <select
           value={page}
           onChange={(e) => {
-            location.href = "/admin/" + e.target.value;
+            navigate("/admin/" + e.target.value);
           }}
         >
           {pages

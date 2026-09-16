@@ -58,13 +58,10 @@ async function limited(req, bucket, max) {
 async function user(req) {
   const key = cookie(req, "__Host-mercado");
   if (!key) return null;
-  const [s] =
-    await sql()`SELECT s.identity,u.referral FROM marcada.sessions s JOIN marcada.users u ON u.identity=s.identity WHERE s.hash=${hash(key)} AND s.expires_at>now()`;
-  if (!s) return null;
-  const [r] =
-    await sql()`SELECT role FROM marcada.roles WHERE identity=${s.identity}`;
-  const [link] =
-    await sql()`SELECT email,wallet FROM marcada.identity_links WHERE email=${s.identity} OR wallet=${s.identity}`;
+  const [record] = await sql()`SELECT s.identity,u.referral,r.role,l.email,l.wallet FROM marcada.sessions s JOIN marcada.users u ON u.identity=s.identity LEFT JOIN marcada.roles r ON r.identity=s.identity LEFT JOIN marcada.identity_links l ON l.email=s.identity OR l.wallet=s.identity WHERE s.hash=${hash(key)} AND s.expires_at>now()`;
+  if (!record) return null;
+  const s = { identity: record.identity, referral: record.referral };
+  const r = { role: record.role }, link = { email: record.email, wallet: record.wallet };
   const wallet = /^0x[a-f0-9]{40}$/.test(s.identity)
     ? s.identity
     : link?.wallet;
@@ -183,12 +180,11 @@ export default async function handler(req, res) {
     }
     if (route === "catalog" && req.method === "GET") {
       const u = await user(req);
-      const products =
-        await sql()`SELECT * FROM marcada.products WHERE active ORDER BY CASE WHEN id='bitaxe' THEN 0 ELSE 1 END,name`;
-      const offers =
-        await sql()`SELECT o.id,o.product_id,o.item_id,o.dealer,o.price,o.currency,o.private,o.expires_at FROM marcada.offers o WHERE o.active AND (o.expires_at IS NULL OR o.expires_at>now()) AND (NOT o.private OR ${u?.canDeals || false} OR EXISTS(SELECT 1 FROM marcada.offer_grants g WHERE g.offer_id=o.id AND g.identity=${u?.identity || ""}))`;
-      const items =
-        await sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`;
+      const [products, offers, items] = await Promise.all([
+sql()`SELECT * FROM marcada.products WHERE active ORDER BY CASE WHEN id='bitaxe' THEN 0 ELSE 1 END,name`,
+sql()`SELECT o.id,o.product_id,o.item_id,o.dealer,o.price,o.currency,o.private,o.expires_at FROM marcada.offers o WHERE o.active AND (o.expires_at IS NULL OR o.expires_at>now()) AND (NOT o.private OR ${u?.canDeals || false} OR EXISTS(SELECT 1 FROM marcada.offer_grants g WHERE g.offer_id=o.id AND g.identity=${u?.identity || ""}))`,
+sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
+      ]);
       return json(res, 200, {
         products,
         offers,
@@ -859,28 +855,29 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true });
     }
     if (route === "admin" && req.method === "GET") {
-      return json(res, 200, {
+      const pending = {
+        user: u,
         workflowRules: u.owner
-          ? await sql()`SELECT * FROM marcada.workflow_rules ORDER BY kind`
+          ? sql()`SELECT * FROM marcada.workflow_rules ORDER BY kind`
           : [],
         workflowDeliveries: u.owner
-          ? await sql()`SELECT event_key,kind,status,attempts,created_at,payload->'to' AS recipients FROM marcada.workflow_outbox ORDER BY created_at DESC LIMIT 50`
+          ? sql()`SELECT event_key,kind,status,attempts,created_at,payload->'to' AS recipients FROM marcada.workflow_outbox ORDER BY created_at DESC LIMIT 50`
           : [],
         productSubmissions: u.canProducts
-          ? await sql()`SELECT * FROM marcada.product_submissions ORDER BY updated_at DESC LIMIT 300`
+          ? sql()`SELECT * FROM marcada.product_submissions ORDER BY updated_at DESC LIMIT 300`
           : u.vendor
-            ? await sql()`SELECT * FROM marcada.product_submissions WHERE identity=${u.identity} ORDER BY updated_at DESC LIMIT 100`
+            ? sql()`SELECT * FROM marcada.product_submissions WHERE identity=${u.identity} ORDER BY updated_at DESC LIMIT 100`
             : [],
         notificationSettings: u.owner
-          ? await notificationSettings(sql())
+          ? notificationSettings(sql())
           : null,
         items: u.canProducts
-          ? await sql()`SELECT *,updated_at::text AS edit_version FROM marcada.items ORDER BY product_id,name`
+          ? sql()`SELECT *,updated_at::text AS edit_version FROM marcada.items ORDER BY product_id,name`
           : [],
         vendors: u.canVendors
-          ? await sql()`SELECT * FROM marcada.vendor_integrations ORDER BY name`
+          ? sql()`SELECT * FROM marcada.vendor_integrations ORDER BY name`
           : u.vendor
-            ? await sql()`SELECT * FROM marcada.vendor_integrations WHERE identity=${u.identity}`
+            ? sql()`SELECT * FROM marcada.vendor_integrations WHERE identity=${u.identity}`
             : [],
         governance: {
           source: "https://gov.bittrees.org",
@@ -888,15 +885,17 @@ export default async function handler(req, res) {
             "Partner → Owner; Admin / Snapshot space admin → Administrator",
         },
         roles: u.owner
-          ? await sql()`SELECT identity,role FROM marcada.roles ORDER BY identity`
+          ? sql()`SELECT identity,role FROM marcada.roles ORDER BY identity`
           : [],
         offers: u.canDeals
-          ? await sql()`SELECT o.*,COALESCE((SELECT json_agg(g.identity) FROM marcada.offer_grants g WHERE g.offer_id=o.id),'[]') AS recipients FROM marcada.offers o ORDER BY o.created_at DESC`
+          ? sql()`SELECT o.*,COALESCE((SELECT json_agg(g.identity) FROM marcada.offer_grants g WHERE g.offer_id=o.id),'[]') AS recipients FROM marcada.offers o ORDER BY o.created_at DESC`
           : [],
         quotes: u.canQuotes
-          ? await sql()`SELECT q.*,p.name,i.name AS item_name,(SELECT to_jsonb(qp)-'created_by' FROM marcada.quote_proposals qp WHERE qp.quote_id=q.id AND qp.version=q.proposal_version) AS proposal,n.status AS notification_status FROM marcada.quotes q JOIN marcada.products p ON p.id=q.product_id LEFT JOIN marcada.items i ON i.id=q.item_id LEFT JOIN marcada.referral_notifications n ON n.quote_id=q.id ORDER BY q.created_at DESC LIMIT 500`
+          ? sql()`SELECT q.*,p.name,i.name AS item_name,(SELECT to_jsonb(qp)-'created_by' FROM marcada.quote_proposals qp WHERE qp.quote_id=q.id AND qp.version=q.proposal_version) AS proposal,n.status AS notification_status FROM marcada.quotes q JOIN marcada.products p ON p.id=q.product_id LEFT JOIN marcada.items i ON i.id=q.item_id LEFT JOIN marcada.referral_notifications n ON n.quote_id=q.id ORDER BY q.created_at DESC LIMIT 500`
           : [],
-      });
+      };
+      const entries = await Promise.all(Object.entries(pending).map(async ([key,value]) => [key,await value]));
+      return json(res, 200, Object.fromEntries(entries));
     }
     if (route === "admin/offer" && req.method === "POST") {
       const id = uuid(body.id) ? body.id : randomUUID(),

@@ -26,3 +26,12 @@ After browser access is restored, check:
 6. Enable a notification rule only with an approved test recipient; confirm actual receipt and provider logs before relying on email delivery.
 
 Payment and delivery remain future workflows. This validation does not certify email inbox delivery, physical wallet-browser compatibility, or live end-to-end UI behavior.
+
+## Account loading improvements
+
+- Account and catalog reads start independently, so loading all catalog offerings no longer blocks account access.
+- Admin entry uses the authenticated user returned by the admin response, avoiding a separate preceding account/governance lookup.
+- Desktop admin links and the mobile workspace selector switch within the app. Back/forward navigation is supported; modified clicks and external links retain browser behavior. Public marketplace navigation keeps its existing behavior.
+- Each account-page transition still requests fresh authorized data. No roles or private records are cached in browser storage. Obsolete account/admin responses are ignored after later navigation.
+- Session, local role and linked identity lookup use one database query. Independent catalog and admin reads run concurrently instead of sequentially.
+- Validation: 32 unit tests, local PostgreSQL API workflow/permission checks, admin server rendering and production build passed. Browser interaction and real-world latency measurements remain unverified because computer access was previously blocked by policy.
