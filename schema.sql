@@ -77,3 +77,6 @@ ALTER TABLE marcada.referral_codes DROP CONSTRAINT IF EXISTS referral_codes_code
 ALTER TABLE marcada.referral_codes ADD CONSTRAINT referral_codes_code_check CHECK(code ~ '^[a-z0-9][a-z0-9-]{2,30}[a-z0-9]$');
 
 ALTER TABLE marcada.users ADD COLUMN IF NOT EXISTS theme text NOT NULL DEFAULT 'dark' CHECK(theme IN ('dark','light'));
+
+ALTER TABLE marcada.users ALTER COLUMN theme SET DEFAULT 'light';
+ALTER TABLE marcada.users ADD COLUMN IF NOT EXISTS theme_updated_at timestamptz;

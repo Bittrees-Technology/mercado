@@ -351,7 +351,7 @@ sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
     }
     if (route === "preferences" && req.method === "POST") {
       if (!["dark", "light"].includes(body.theme)) return json(res, 400, { error: "Choose light or dark mode." });
-      await sql()`UPDATE marcada.users SET theme=${body.theme} WHERE identity=${u.identity}`;
+      await sql()`UPDATE marcada.users SET theme=${body.theme},theme_updated_at=now() WHERE identity=${u.identity}`;
       return json(res, 200, { theme: body.theme });
     }
     if (route === "me" && req.method === "GET") {

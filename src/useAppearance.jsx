@@ -1,8 +1,8 @@
 import {useEffect,useState} from 'react';
 export function useAppearance(user,setUser,api) {
-  const [theme,setTheme]=useState(()=>document.documentElement.dataset.theme==='light'?'light':'dark');
+  const [theme,setTheme]=useState(()=>document.documentElement.dataset.theme==='dark'?'dark':'light');
   const [saving,setSaving]=useState(false),[themeError,setThemeError]=useState('');
-  function apply(value){setTheme(value);document.documentElement.dataset.theme=value;try{localStorage.setItem('mercado-theme',value);}catch{}}
+  function apply(value){setTheme(value);document.documentElement.dataset.theme=value;try{localStorage.setItem('mercado-appearance-choice',value);}catch{}}
   useEffect(()=>{if(user?.theme)apply(user.theme);},[user?.identity,user?.theme]);
   async function changeTheme(value){
     if(saving || !['dark','light'].includes(value))return;

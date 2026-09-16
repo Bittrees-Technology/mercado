@@ -38,6 +38,6 @@ Payment and delivery remain future workflows. This validation does not certify e
 
 ## Saved appearance
 
-Dark is the default for new and existing accounts without a prior preference. The header toggle and account Appearance selector update the authenticated account through `/api/preferences`; unsigned visitors keep a local browser preference. The early same-origin appearance script applies the last browser choice before application startup. Signing in applies the stored account choice. Product image pixels and hardware illustrations are unchanged.
+Light is the default for fresh visits and new accounts. Existing stored account preferences are preserved; legacy records did not distinguish automatic dark defaults from deliberate dark selections. New preference updates record a timestamp. The header toggle and account Appearance selector update the authenticated account through `/api/preferences`; unsigned visitors keep a local browser preference. The early same-origin appearance script applies the last browser choice before application startup. Signing in applies the stored account choice. Product image pixels and hardware illustrations are unchanged.
 
 Isolated API tests verified the default, light/dark updates, rejection of invalid values and unauthenticated writes, and that a supplied identity cannot change another account's preference. Visual browser checks remain pending due to the computer-access policy block.

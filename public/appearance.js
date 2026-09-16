@@ -1,2 +1,2 @@
-// Apply a remembered appearance before styles render; dark is the default.
-try { document.documentElement.dataset.theme = localStorage.getItem('mercado-theme') === 'light' ? 'light' : 'dark'; } catch { document.documentElement.dataset.theme = 'dark'; }
+// Light is the default. This key stores deliberate choices, not old automatic defaults.
+try { document.documentElement.dataset.theme = localStorage.getItem('mercado-appearance-choice') === 'dark' ? 'dark' : 'light'; } catch { document.documentElement.dataset.theme = 'light'; }
