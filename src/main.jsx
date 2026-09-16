@@ -1,3 +1,4 @@
+import { useAppearance } from "./useAppearance.jsx";
 import { useAccountNavigation } from "./useAccountNavigation.jsx";
 import { ReferralPanel } from "./ReferralPanel.jsx";
 import { NotificationPage } from "./NotificationPage.jsx";
@@ -28,6 +29,8 @@ import {
   ExternalLink,
   Package,
   Mail,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { createSiweMessage } from "viem/siwe";
 import "./style.css";
@@ -134,6 +137,7 @@ function App() {
     [busy, setBusy] = useState(false),
     [email, setEmail] = useState(""),
     [challenge, setChallenge] = useState("");
+  const {theme,changeTheme,saving:themeSaving,themeError} = useAppearance(user,setUser,api);
   const initial = new URL(location.href);
   const [referral, setReferral] = useState(() => {
     if (initial.searchParams.has("ref"))
@@ -433,6 +437,11 @@ function App() {
             Private deals <Lock size={12} />
           </button>
         </nav>
+        <div className="header-account-actions">
+        <button className="theme-toggle" disabled={themeSaving} onClick={() => changeTheme(theme === "dark" ? "light" : "dark")}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+          {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
         <button
           className="account"
           onClick={() => open(user ? "account" : "login")}
@@ -440,7 +449,9 @@ function App() {
           <User size={17} />
           <span>{user ? "My account" : "Sign in"}</span>
         </button>
+      </div>
       </header>
+      {themeError && <p className="appearance-error" role="alert">{themeError}</p>}
       <main>
         {accountLoading && !user && (location.pathname.startsWith("/admin") || location.pathname.startsWith("/account/notifications")) ? (
           <section className="equipment-page" role="status">Loading your workspace…</section>
@@ -845,6 +856,12 @@ function App() {
             {modal === "account" && (
               <>
                 <h2>Your account</h2>
+                <label>Appearance
+                  <select value={theme} disabled={themeSaving} onChange={(e) => changeTheme(e.target.value)}>
+                    <option value="dark">Dark</option><option value="light">Light</option>
+                  </select>
+                </label>
+                <small role="status">{themeSaving ? "Saving appearance…" : themeError ? "Appearance was not saved." : "Appearance is saved to your account."}</small>
                 <p className="identity">{user?.identity}</p>
                 <div className="account-access">
                   <strong>

@@ -35,3 +35,9 @@ Payment and delivery remain future workflows. This validation does not certify e
 - Each account-page transition still requests fresh authorized data. No roles or private records are cached in browser storage. Obsolete account/admin responses are ignored after later navigation.
 - Session, local role and linked identity lookup use one database query. Independent catalog and admin reads run concurrently instead of sequentially.
 - Validation: 32 unit tests, local PostgreSQL API workflow/permission checks, admin server rendering and production build passed. Browser interaction and real-world latency measurements remain unverified because computer access was previously blocked by policy.
+
+## Saved appearance
+
+Dark is the default for new and existing accounts without a prior preference. The header toggle and account Appearance selector update the authenticated account through `/api/preferences`; unsigned visitors keep a local browser preference. The early same-origin appearance script applies the last browser choice before application startup. Signing in applies the stored account choice. Product image pixels and hardware illustrations are unchanged.
+
+Isolated API tests verified the default, light/dark updates, rejection of invalid values and unauthenticated writes, and that a supplied identity cannot change another account's preference. Visual browser checks remain pending due to the computer-access policy block.

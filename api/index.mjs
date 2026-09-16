@@ -58,9 +58,9 @@ async function limited(req, bucket, max) {
 async function user(req) {
   const key = cookie(req, "__Host-mercado");
   if (!key) return null;
-  const [record] = await sql()`SELECT s.identity,u.referral,r.role,l.email,l.wallet FROM marcada.sessions s JOIN marcada.users u ON u.identity=s.identity LEFT JOIN marcada.roles r ON r.identity=s.identity LEFT JOIN marcada.identity_links l ON l.email=s.identity OR l.wallet=s.identity WHERE s.hash=${hash(key)} AND s.expires_at>now()`;
+  const [record] = await sql()`SELECT s.identity,u.referral,u.theme,r.role,l.email,l.wallet FROM marcada.sessions s JOIN marcada.users u ON u.identity=s.identity LEFT JOIN marcada.roles r ON r.identity=s.identity LEFT JOIN marcada.identity_links l ON l.email=s.identity OR l.wallet=s.identity WHERE s.hash=${hash(key)} AND s.expires_at>now()`;
   if (!record) return null;
-  const s = { identity: record.identity, referral: record.referral };
+  const s = { identity: record.identity, referral: record.referral, theme: record.theme };
   const r = { role: record.role }, link = { email: record.email, wallet: record.wallet };
   const wallet = /^0x[a-f0-9]{40}$/.test(s.identity)
     ? s.identity
@@ -348,6 +348,11 @@ sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
           error: "Notification unavailable for this account",
         });
       return json(res, 200, { notifications });
+    }
+    if (route === "preferences" && req.method === "POST") {
+      if (!["dark", "light"].includes(body.theme)) return json(res, 400, { error: "Choose light or dark mode." });
+      await sql()`UPDATE marcada.users SET theme=${body.theme} WHERE identity=${u.identity}`;
+      return json(res, 200, { theme: body.theme });
     }
     if (route === "me" && req.method === "GET") {
       const quotes =

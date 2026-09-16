@@ -18,6 +18,13 @@ async function req(path,body,who){let status=200,data;await handler({url:'/api/'
 let mail=[];const originalFetch=globalThis.fetch;
 globalThis.fetch=async(url,options)=>{assert.equal(String(url),'https://api.resend.com/emails');mail.push(JSON.parse(options.body));return new Response(JSON.stringify({id:randomUUID()}));};
 try {
+  assert.equal((await req('me',undefined,customer)).data.user.theme,'dark');
+  assert.equal((await req('preferences',{theme:'light'})).status,401);
+  assert.equal((await req('preferences',{theme:'invalid'},customer)).status,400);
+  assert.equal((await req('preferences',{theme:'light',identity:other},customer)).status,200);
+  assert.equal((await req('me',undefined,customer)).data.user.theme,'light');
+  assert.equal((await req('me',undefined,other)).data.user.theme,'dark');
+  assert.equal((await req('preferences',{theme:'dark'},customer)).status,200);
   for(const kind of ['product_submitted','vendor_submitted','quote_received']){
     assert.equal((await req('admin/workflow-rule',{kind,enabled:true,recipient:'ops@example.com'},vendor)).status,403);
     assert.equal((await req('admin/workflow-rule',{kind,enabled:true,recipient:'ops@example.com'},owner)).status,200);

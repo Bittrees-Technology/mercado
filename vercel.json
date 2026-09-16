@@ -7,7 +7,7 @@
       "destination": "/api/index"
     },
     {
-      "source": "/((?!assets/|products/|favicon.svg|product-import-template.csv|robots.txt|sitemap.xml).*)",
+      "source": "/((?!assets/|products/|appearance.js|favicon.svg|product-import-template.csv|robots.txt|sitemap.xml).*)",
       "destination": "/index.html"
     }
   ],
