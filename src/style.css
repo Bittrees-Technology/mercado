@@ -1772,3 +1772,13 @@ button:disabled {
 .admin-page dt { font-weight: 600; margin-top: 8px; }
 .admin-page .record > .secondary { margin: 8px 8px 8px 0; display: inline-flex; }
 .admin-page .record > small { display: block; overflow-wrap: anywhere; }
+
+.referral-panel .referral-share { width: 100%; justify-content: center; }
+.referral-panel .referral-code-row { display: flex; gap: 8px; align-items: center; margin-bottom: 20px; }
+.referral-code-row input { min-width: 0; flex: 1; font-family: monospace; }
+.referral-code-row button { flex-shrink: 0; }
+.referral-panel label[for="member-referral"] { margin-bottom: 8px; }
+.referral-options { border-top: 1px solid #dce2d5; padding: 15px 0; }
+.referral-options summary { cursor: pointer; font-size: 13px; font-weight: 600; color: #304529; padding: 4px 0; }
+.referral-options summary:focus-visible { outline: 2px solid #56753c; outline-offset: 4px; }
+.referral-options select { width: 100%; min-width: 0; }

@@ -54,6 +54,7 @@ try {
     const page = await context.newPage();
     await page.goto(base);
     await page.getByRole("button", { name: "Referrals", exact: true }).click();
+    await page.getByText("Replace your code", { exact: true }).click();
     await page
       .getByRole("button", { name: "Request a new code", exact: true })
       .click();
@@ -75,6 +76,7 @@ try {
       await page.evaluate(() => window.copied),
       "https://mercado.bittrees.org/?ref=abcdef1234567890",
     );
+    await page.getByText("Link to a product or collection", { exact: true }).click();
     await page.getByLabel("Search products", { exact: true }).fill("coffee");
     await page
       .getByRole("combobox", { name: /Individual product/ })

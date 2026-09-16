@@ -1,3 +1,4 @@
+import { ReferralPanel } from "./ReferralPanel.jsx";
 import { NotificationPage } from "./NotificationPage.jsx";
 import { WalletPicker } from "./WalletPicker.jsx";
 import { signWalletMessage, walletError } from "../lib/wallets.mjs";
@@ -261,8 +262,6 @@ function App() {
     setError("");
     setNotice("");
   }
-  const [referralItem, setReferralItem] = useState("");
-  const [referralSearch, setReferralSearch] = useState("");
   async function share(product = "", item = "") {
     await run(async () => {
       if (!user) {
@@ -710,7 +709,7 @@ function App() {
             className={"modal " + (modal === "admin" ? "wide" : "")}
             role="dialog"
             aria-modal="true"
-            aria-label="Mercado account and equipment"
+            aria-label={modal === "referrals" ? "Share Mercado" : "Mercado account and equipment"}
             onKeyDown={(e) => {
               if (e.key === "Escape") close();
             }}
@@ -976,145 +975,23 @@ function App() {
               </>
             )}
             {modal === "referrals" && (
-              <>
-                <div className="eyebrow">REFERRALS</div>
-                <h2>Your code. Every product.</h2>
-                <p>
-                  Your referral code works across every Mercado product and
-                  collection. Share the whole store or link directly to a
-                  product.
-                </p>
-                {user ? (
-                  <>
-                    <label>
-                      Your member referral code
-                      <input
-                        readOnly
-                        value={user.referral}
-                        aria-label="Your member referral code"
-                      />
-                    </label>
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        run(async () => {
-                          await navigator.clipboard.writeText(user.referral);
-                          setNotice("Referral code copied.");
-                        })
-                      }
-                    >
-                      Copy referral code <Copy size={16} />
-                    </button>
-                    <button
-                      className="secondary"
-                      disabled={busy}
-                      onClick={() =>
-                        run(async () => {
-                          const result = await api("referrals/new", {});
-                          setUser((current) => ({
-                            ...current,
-                            referral: result.referral,
-                          }));
-                          setNotice(
-                            "New referral code ready. Your previous codes and links still work.",
-                          );
-                        })
-                      }
-                    >
-                      Request a new code
-                    </button>
-                    <small>
-                      Previous codes and links remain valid and attributed to
-                      you.
-                    </small>
-                    <p>
-                      Share this code with customers. They can enter it when
-                      requesting a quote, or use your referral link.
-                    </p>
-                    <label>
-                      Your store referral link
-                      <input
-                        readOnly
-                        value={
-                          "https://mercado.bittrees.org/?ref=" + user.referral
-                        }
-                      />
-                    </label>
-                    <button className="primary" onClick={() => share()}>
-                      Copy store link <Copy size={16} />
-                    </button>
-                    <label>
-                      Product collection
-                      <select id="ref-product">
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <button
-                      className="secondary"
-                      onClick={() =>
-                        share(document.querySelector("#ref-product").value)
-                      }
-                    >
-                      Copy collection link <Copy size={16} />
-                    </button>
-                    <label>
-                      Search products
-                      <input
-                        type="search"
-                        value={referralSearch}
-                        onChange={(e) => setReferralSearch(e.target.value)}
-                        placeholder="Product name or supplier"
-                      />
-                    </label>
-                    <label>
-                      Individual product
-                      <select
-                        value={referralItem}
-                        onChange={(e) => setReferralItem(e.target.value)}
-                      >
-                        <option value="">Choose a product</option>
-                        {items
-                          .filter(
-                            (p) =>
-                              p.id === referralItem ||
-                              (p.name + " " + p.source_name)
-                                .toLowerCase()
-                                .includes(referralSearch.toLowerCase()),
-                          )
-                          .map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name} · {p.source_name}
-                            </option>
-                          ))}
-                      </select>
-                    </label>
-                    <button
-                      className="secondary"
-                      disabled={!referralItem || busy}
-                      onClick={() => {
-                        const item = items.find((p) => p.id === referralItem);
-                        if (item) share(item.product_id, item.id);
-                      }}
-                    >
-                      Copy product link <Copy size={16} />
-                    </button>
-                  </>
-                ) : (
-                  <button className="primary" onClick={() => open("login")}>
-                    Sign in to create a link <ArrowRight size={18} />
-                  </button>
-                )}
-                <small>
-                  Referral links track quote attribution. Commission
-                  eligibility, sale confirmation and payouts depend on a
-                  separate dealer agreement; sharing alone does not guarantee
-                  earnings.
-                </small>
-              </>
+              <ReferralPanel
+                user={user}
+                products={products}
+                items={items}
+                busy={busy}
+                share={share}
+                signIn={() => open("login")}
+                copyCode={() => run(async () => {
+                  await navigator.clipboard.writeText(user.referral);
+                  setNotice("Referral code copied.");
+                })}
+                renew={() => run(async () => {
+                  const result = await api("referrals/new", {});
+                  setUser((current) => ({ ...current, referral: result.referral }));
+                  setNotice("New code ready. Your previous codes and links still work.");
+                })}
+              />
             )}
             {modal === "deals" && (
               <>
