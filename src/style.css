@@ -1800,3 +1800,10 @@ button:disabled {
   .header-account-actions { gap: 2px; }
   .header-account-actions .account { padding: 8px; }
 }
+
+.account-avatar{width:24px;height:24px;border-radius:50%;object-fit:cover}
+.profile-avatar{width:88px;height:88px;border-radius:50%;object-fit:cover;margin-bottom:12px}
+.profile-image{padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.image-upload input{max-width:100%;min-width:0}
+.image-upload small{display:block;line-height:1.5}
+.submission-image{max-width:100%;width:200px;height:160px;object-fit:contain}

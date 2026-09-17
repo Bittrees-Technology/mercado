@@ -1,3 +1,4 @@
+import { prepareImage, publishImage } from "../lib/ipfs.mjs";
 import { customReferralCode, validReferralCode } from "../lib/referrals.mjs";
 import {
   workflowRule,
@@ -58,10 +59,18 @@ async function limited(req, bucket, max) {
 async function user(req) {
   const key = cookie(req, "__Host-mercado");
   if (!key) return null;
-  const [record] = await sql()`SELECT s.identity,u.referral,u.theme,r.role,l.email,l.wallet FROM marcada.sessions s JOIN marcada.users u ON u.identity=s.identity LEFT JOIN marcada.roles r ON r.identity=s.identity LEFT JOIN marcada.identity_links l ON l.email=s.identity OR l.wallet=s.identity WHERE s.hash=${hash(key)} AND s.expires_at>now()`;
+  const [record] =
+    await sql()`SELECT s.identity,u.referral,u.theme,u.avatar_url,u.avatar_cid,r.role,l.email,l.wallet FROM marcada.sessions s JOIN marcada.users u ON u.identity=s.identity LEFT JOIN marcada.roles r ON r.identity=s.identity LEFT JOIN marcada.identity_links l ON l.email=s.identity OR l.wallet=s.identity WHERE s.hash=${hash(key)} AND s.expires_at>now()`;
   if (!record) return null;
-  const s = { identity: record.identity, referral: record.referral, theme: record.theme };
-  const r = { role: record.role }, link = { email: record.email, wallet: record.wallet };
+  const s = {
+    identity: record.identity,
+    referral: record.referral,
+    theme: record.theme,
+    avatar_url: record.avatar_url,
+    avatar_cid: record.avatar_cid,
+  };
+  const r = { role: record.role },
+    link = { email: record.email, wallet: record.wallet };
   const wallet = /^0x[a-f0-9]{40}$/.test(s.identity)
     ? s.identity
     : link?.wallet;
@@ -134,7 +143,10 @@ export default async function handler(req, res) {
       route = url.pathname.replace(/^\/api\/?/, "");
     let body = req.body || {};
     if (typeof body === "string") {
-      if (body.length > (route === "admin/image" ? 1500000 : 16000))
+      if (
+        body.length >
+        (["admin/image", "images"].includes(route) ? 1500000 : 16000)
+      )
         return json(res, 413, { error: "Request too large" });
       try {
         body = JSON.parse(body);
@@ -143,7 +155,8 @@ export default async function handler(req, res) {
       }
     }
     if (
-      JSON.stringify(body).length > (route === "admin/image" ? 1500000 : 16000)
+      JSON.stringify(body).length >
+      (["admin/image", "images"].includes(route) ? 1500000 : 16000)
     )
       return json(res, 413, { error: "Request too large" });
     if (route === "image" && req.method === "GET") {
@@ -181,9 +194,9 @@ export default async function handler(req, res) {
     if (route === "catalog" && req.method === "GET") {
       const u = await user(req);
       const [products, offers, items] = await Promise.all([
-sql()`SELECT * FROM marcada.products WHERE active ORDER BY CASE WHEN id='bitaxe' THEN 0 ELSE 1 END,name`,
-sql()`SELECT o.id,o.product_id,o.item_id,o.dealer,o.price,o.currency,o.private,o.expires_at FROM marcada.offers o WHERE o.active AND (o.expires_at IS NULL OR o.expires_at>now()) AND (NOT o.private OR ${u?.canDeals || false} OR EXISTS(SELECT 1 FROM marcada.offer_grants g WHERE g.offer_id=o.id AND g.identity=${u?.identity || ""}))`,
-sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
+        sql()`SELECT * FROM marcada.products WHERE active ORDER BY CASE WHEN id='bitaxe' THEN 0 ELSE 1 END,name`,
+        sql()`SELECT o.id,o.product_id,o.item_id,o.dealer,o.price,o.currency,o.private,o.expires_at FROM marcada.offers o WHERE o.active AND (o.expires_at IS NULL OR o.expires_at>now()) AND (NOT o.private OR ${u?.canDeals || false} OR EXISTS(SELECT 1 FROM marcada.offer_grants g WHERE g.offer_id=o.id AND g.identity=${u?.identity || ""}))`,
+        sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`,
       ]);
       return json(res, 200, {
         products,
@@ -319,20 +332,30 @@ sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
     if (!u) return json(res, 401, { error: "Sign in to continue" });
     if (route === "referrals/new" && req.method === "POST") {
       await limited(req, "referral-code", 5);
-      const code = body.code === undefined ? token().slice(0, 16) : customReferralCode(body.code);
+      const code =
+        body.code === undefined
+          ? token().slice(0, 16)
+          : customReferralCode(body.code);
       const db = sql();
       if (code === u.referral) return json(res, 200, { referral: code });
-      const taken = await db`SELECT 1 FROM marcada.users WHERE referral=${code} UNION SELECT 1 FROM marcada.referral_codes WHERE code=${code}`;
-      if (taken.length) return json(res, 409, { error: "That code is already in use. Choose another." });
+      const taken =
+        await db`SELECT 1 FROM marcada.users WHERE referral=${code} UNION SELECT 1 FROM marcada.referral_codes WHERE code=${code}`;
+      if (taken.length)
+        return json(res, 409, {
+          error: "That code is already in use. Choose another.",
+        });
       try {
-      await db.transaction([
-        db`INSERT INTO marcada.referral_codes(code,identity) SELECT referral,identity FROM marcada.users WHERE identity=${u.identity} ON CONFLICT(code) DO NOTHING`,
-        db`INSERT INTO marcada.referral_codes(code,identity) VALUES(${code},${u.identity})`,
-        db`UPDATE marcada.users SET referral=${code} WHERE identity=${u.identity}`,
-        db`INSERT INTO marcada.audit(id,actor,action,detail) VALUES(${randomUUID()},${u.identity},'new_referral_code',${code})`,
-      ]);
+        await db.transaction([
+          db`INSERT INTO marcada.referral_codes(code,identity) SELECT referral,identity FROM marcada.users WHERE identity=${u.identity} ON CONFLICT(code) DO NOTHING`,
+          db`INSERT INTO marcada.referral_codes(code,identity) VALUES(${code},${u.identity})`,
+          db`UPDATE marcada.users SET referral=${code} WHERE identity=${u.identity}`,
+          db`INSERT INTO marcada.audit(id,actor,action,detail) VALUES(${randomUUID()},${u.identity},'new_referral_code',${code})`,
+        ]);
       } catch (error) {
-        if (error.code === "23505") return json(res, 409, { error: "That code is already in use. Choose another." });
+        if (error.code === "23505")
+          return json(res, 409, {
+            error: "That code is already in use. Choose another.",
+          });
         throw error;
       }
       return json(res, 201, { referral: code });
@@ -349,8 +372,52 @@ sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
         });
       return json(res, 200, { notifications });
     }
+    if (
+      (route === "images" || route === "admin/image") &&
+      req.method === "POST"
+    ) {
+      const purpose = route === "admin/image" ? "product" : body.purpose;
+      if (!["product", "profile"].includes(purpose))
+        return json(res, 400, { error: "Choose a product or profile image." });
+      if (purpose === "product" && !u.canProducts && !u.vendor)
+        return json(res, 403, { error: "Vendor or catalog access required." });
+      if (route === "admin/image" && !u.canProducts)
+        return json(res, 403, { error: "Product manager access required." });
+      await limited(req, "image-upload:" + u.identity, 10);
+      const [count] =
+        await sql()`SELECT count(*)::int AS n FROM marcada.ipfs_uploads WHERE identity=${u.identity} AND created_at>now()-interval '1 day'`;
+      if (count.n >= 20)
+        return json(res, 429, {
+          error: "Daily image upload limit reached. Try again tomorrow.",
+        });
+      const image = await prepareImage(body.image);
+      const pinned = await publishImage(image);
+      const [saved] =
+        await sql()`INSERT INTO marcada.ipfs_uploads(id,identity,purpose,cid,url,mime,bytes) VALUES(${randomUUID()},${u.identity},${purpose},${pinned.cid},${pinned.url},${image.mime},${image.bytes}) ON CONFLICT(identity,purpose,cid) DO UPDATE SET url=EXCLUDED.url RETURNING id`;
+      await audit(u.identity, "upload_ipfs_image", saved.id);
+      return json(res, 201, { id: saved.id, ...pinned });
+    }
+    if (route === "profile/image" && req.method === "POST") {
+      let uploaded = null;
+      if (body.upload_id !== null) {
+        if (!uuid(body.upload_id))
+          return json(res, 400, { error: "Choose an uploaded profile image." });
+        [uploaded] =
+          await sql()`SELECT url,cid FROM marcada.ipfs_uploads WHERE id=${body.upload_id} AND identity=${u.identity} AND purpose='profile'`;
+        if (!uploaded)
+          return json(res, 404, {
+            error: "Profile image not found for this account.",
+          });
+      }
+      await sql()`UPDATE marcada.users SET avatar_url=${uploaded?.url || null},avatar_cid=${uploaded?.cid || null} WHERE identity=${u.identity}`;
+      return json(res, 200, {
+        avatar_url: uploaded?.url || null,
+        avatar_cid: uploaded?.cid || null,
+      });
+    }
     if (route === "preferences" && req.method === "POST") {
-      if (!["dark", "light"].includes(body.theme)) return json(res, 400, { error: "Choose light or dark mode." });
+      if (!["dark", "light"].includes(body.theme))
+        return json(res, 400, { error: "Choose light or dark mode." });
       await sql()`UPDATE marcada.users SET theme=${body.theme},theme_updated_at=now() WHERE identity=${u.identity}`;
       return json(res, 200, { theme: body.theme });
     }
@@ -746,14 +813,6 @@ sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
       await audit(u.identity, "review_product", body.id + ":" + body.status);
       return json(res, 200, { ok: true });
     }
-    if (route === "admin/image" && req.method === "POST") {
-      await limited(req, "image-upload", 20);
-      const m = imageUpload(body.image),
-        id = randomUUID();
-      await sql()`INSERT INTO marcada.media(id,mime,data,bytes,created_by) VALUES(${id},${m.mime},${m.data},${m.bytes},${u.identity})`;
-      await audit(u.identity, "upload_product_image", id);
-      return json(res, 201, { url: "/api/image?id=" + id });
-    }
     if (route === "admin/item" && req.method === "POST") {
       const p = itemInput(body);
       if (
@@ -873,9 +932,7 @@ sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
           : u.vendor
             ? sql()`SELECT * FROM marcada.product_submissions WHERE identity=${u.identity} ORDER BY updated_at DESC LIMIT 100`
             : [],
-        notificationSettings: u.owner
-          ? notificationSettings(sql())
-          : null,
+        notificationSettings: u.owner ? notificationSettings(sql()) : null,
         items: u.canProducts
           ? sql()`SELECT *,updated_at::text AS edit_version FROM marcada.items ORDER BY product_id,name`
           : [],
@@ -899,7 +956,9 @@ sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`
           ? sql()`SELECT q.*,p.name,i.name AS item_name,(SELECT to_jsonb(qp)-'created_by' FROM marcada.quote_proposals qp WHERE qp.quote_id=q.id AND qp.version=q.proposal_version) AS proposal,n.status AS notification_status FROM marcada.quotes q JOIN marcada.products p ON p.id=q.product_id LEFT JOIN marcada.items i ON i.id=q.item_id LEFT JOIN marcada.referral_notifications n ON n.quote_id=q.id ORDER BY q.created_at DESC LIMIT 500`
           : [],
       };
-      const entries = await Promise.all(Object.entries(pending).map(async ([key,value]) => [key,await value]));
+      const entries = await Promise.all(
+        Object.entries(pending).map(async ([key, value]) => [key, await value]),
+      );
       return json(res, 200, Object.fromEntries(entries));
     }
     if (route === "admin/offer" && req.method === "POST") {

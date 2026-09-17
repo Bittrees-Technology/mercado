@@ -1,3 +1,4 @@
+import {ProfileImage} from "./ImageUpload.jsx";
 import { useAppearance } from "./useAppearance.jsx";
 import { useAccountNavigation } from "./useAccountNavigation.jsx";
 import { ReferralPanel } from "./ReferralPanel.jsx";
@@ -446,7 +447,7 @@ function App() {
           className="account"
           onClick={() => open(user ? "account" : "login")}
         >
-          <User size={17} />
+          {user?.avatar_url ? <img className="account-avatar" src={user.avatar_url} alt="" /> : <User size={17} />}
           <span>{user ? "My account" : "Sign in"}</span>
         </button>
       </div>
@@ -856,6 +857,7 @@ function App() {
             {modal === "account" && (
               <>
                 <h2>Your account</h2>
+                <ProfileImage user={user} setUser={setUser} api={api} />
                 <label>Appearance
                   <select value={theme} disabled={themeSaving} onChange={(e) => changeTheme(e.target.value)}>
                     <option value="dark">Dark</option><option value="light">Light</option>

@@ -562,20 +562,35 @@ try {
   await sql`DELETE FROM marcada.auth_tokens WHERE hash=${hash(n2.data.nonce)}`;
   assert.equal((await request("admin/item", {}, support)).status, 403);
   assert.equal((await request("admin/image", {}, customer)).status, 403);
-  const upload = await request(
-    "admin/image",
-    {
-      image:
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
-    },
-    dealer,
-  );
-  assert.equal(upload.status, 201, JSON.stringify(upload.data));
-  mediaId = upload.data.url.split("=")[1];
-  const photo = await request("image?id=" + mediaId);
-  assert.equal(photo.status, 200);
-  assert.equal(photo.headers["content-type"], "image/png");
-  assert.ok(Buffer.isBuffer(photo.data));
+  process.env.IPFS_API_URL='https://ipfs-test.example';
+  process.env.IPFS_API_BEARER_TOKEN='test-only';
+  process.env.IPFS_GATEWAY_BASE_URL='https://read-test.example';
+  const imageBytes=await (await import('sharp')).default({create:{width:16,height:16,channels:3,background:'#abc'}}).png().toBuffer();
+  const image='data:image/png;base64,'+imageBytes.toString('base64');
+  const beforeImages=globalThis.fetch;let pinnedBytes;
+  globalThis.fetch=async(url,options)=>{
+    if(String(url).startsWith('https://ipfs-test.example/')){pinnedBytes=await options.body.get('file').arrayBuffer();return new Response(JSON.stringify({Hash:'bafybeiaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}));}
+    if(String(url).startsWith('https://read-test.example/'))return new Response(pinnedBytes);
+    return beforeImages(url,options);
+  };
+  const upload=await request('admin/image',{image},dealer);
+  assert.equal(upload.status,201,JSON.stringify(upload.data));
+  assert.ok(upload.data.url.startsWith('https://read-test.example/ipfs/'));
+  assert.equal((await request('images',{purpose:'product',image},customer)).status,403);
+  assert.equal((await request('images',{purpose:'profile',image})).status,401);
+  const avatar=await request('images',{purpose:'profile',image},customer);
+  assert.equal(avatar.status,201,JSON.stringify(avatar.data));
+  assert.equal((await request('profile/image',{upload_id:avatar.data.id},support)).status,404);
+  assert.equal((await request('profile/image',{upload_id:upload.data.id},dealer)).status,404);
+  assert.equal((await request('profile/image',{upload_id:avatar.data.id},customer)).status,200);
+  assert.equal((await request('me',undefined,customer)).data.user.avatar_url,avatar.data.url);
+  assert.equal((await request('profile/image',{upload_id:null},customer)).status,200);
+  assert.equal((await request('me',undefined,customer)).data.user.avatar_url,null);
+  await request('admin/role',{identity:customer,role:'vendor'},owner);
+  assert.equal((await request('images',{purpose:'product',image},customer)).status,201);
+  assert.equal((await request('admin/image',{image},customer)).status,403);
+  await request('admin/role',{identity:customer,role:'customer'},owner);
+  globalThis.fetch=beforeImages;
   const product = {
     id: testItem,
     product_id: "bitaxe",

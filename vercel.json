@@ -96,5 +96,10 @@
       "destination": "https://mercado.bittrees.org/:path*",
       "permanent": true
     }
-  ]
+  ],
+  "functions": {
+    "api/index.mjs": {
+      "maxDuration": 60
+    }
+  }
 }

@@ -1,3 +1,4 @@
+import { ImageUpload } from "./ImageUpload.jsx";
 import React, { useState } from "react";
 export function ProductSubmissions({
   user,
@@ -68,7 +69,17 @@ export function ProductSubmissions({
               value={draft.item_id || ""}
               onChange={(e) => {
                 const p = items.find((p) => p.id === e.target.value);
-                setDraft(p ? { ...p, item_id: p.id } : {});
+                setDraft(
+                  p
+                    ? {
+                        ...p,
+                        item_id: p.id,
+                        image_url: p.image_url?.startsWith("https://")
+                          ? p.image_url
+                          : "",
+                      }
+                    : {},
+                );
               }}
             >
               <option value="">New product</option>
@@ -123,7 +134,6 @@ export function ProductSubmissions({
             ["name", "Product name", "text", true],
             ["source_name", "Supplier name", "text", true],
             ["source_url", "Supplier product URL", "url", true],
-            ["image_url", "Product image URL (optional)", "url", false],
             ["price", "Reference price (optional)", "number", false],
             [
               "price_checked",
@@ -157,6 +167,30 @@ export function ProductSubmissions({
               />
             </label>
           ))}
+          <label className="span2">
+            Product image URL (optional)
+            <input
+              name="image_url"
+              type="url"
+              value={draft.image_url || ""}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, image_url: e.target.value }))
+              }
+            />
+          </label>
+          <ImageUpload
+            api={api}
+            purpose="product"
+            disabled={busy}
+            onUploaded={(r) => setDraft((d) => ({ ...d, image_url: r.url }))}
+          />
+          {draft.image_url?.startsWith("https://") && (
+            <img
+              className="submission-image span2"
+              src={draft.image_url}
+              alt="Product image preview"
+            />
+          )}
           <label>
             Currency
             <select name="currency" defaultValue={draft.currency || "USD"}>

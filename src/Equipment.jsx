@@ -549,7 +549,9 @@ export function ProductManager({
       />
       <p>
         Products appear inside their equipment collection. Photos are public.
-        Upload JPEG, PNG or WebP up to 1 MB, or use an HTTPS image URL.
+        Upload JPEG, PNG or WebP up to 1 MB, or use an HTTPS image URL. Uploaded
+        images are public on IPFS; removing them here does not erase stored
+        copies.
       </p>
       <div className="admin-toolbar">
         <label>
@@ -747,7 +749,7 @@ export function ProductManager({
             />
           </label>
           <label className="span2 upload-label">
-            <Upload size={18} /> Upload a replacement photo
+            <Upload size={18} /> Upload a replacement photo to public IPFS
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
