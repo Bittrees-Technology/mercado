@@ -1842,3 +1842,24 @@ button:disabled {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Account settings use one quiet, aligned column in both themes. */
+.modal .account-panel h2 { margin-bottom: 16px; }
+.account-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+.modal .account-summary .identity { margin: 0; font-size: 14px; }
+.account-role { font-size: 12px; text-transform: capitalize; color: var(--appearance-muted, #465d3c); background: var(--appearance-surface, #edf1e4); border-radius: 4px; padding: 6px 10px; }
+.account-photo-settings { border-block: 1px solid var(--appearance-border, #d5dfc9); }
+.account-photo-settings summary { padding: 16px 0; cursor: pointer; font-size: 14px; }
+.account-photo-settings .profile-image { border: 0; margin: 0; padding-bottom: 16px; }
+.account-photo-settings .profile-image h3 { display: none; }
+.modal .account-appearance { display: grid; grid-template-columns: 1fr minmax(120px, 45%); align-items: center; margin: 16px 0; font-size: 14px; }
+.account-wallet:empty { display: none; }
+.modal .account-wallet { margin: 0 0 24px; }
+.modal .account-wallet .secondary { margin: 0; min-height: 44px; }
+.account-field-label { display: block; font-size: 12px; margin-bottom: 6px; }
+.account-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 24px 0; }
+.modal .account-actions .secondary, .modal .account-actions .primary { width: 100%; margin: 0; min-height: 46px; justify-content: space-between; box-sizing: border-box; font-size: 14px; padding: 12px 16px; }
+.account-quotes { border-top: 1px solid var(--appearance-border, #d5dfc9); padding-top: 20px; }
+.modal .account-quotes h3 { margin: 0 0 12px; font-size: 16px; }
+.modal .account-quotes > p { margin: 0; font-size: 14px; }
+.modal .account-signout { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 20px; }

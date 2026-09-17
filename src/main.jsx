@@ -855,24 +855,23 @@ function App() {
               </>
             )}
             {modal === "account" && (
-              <>
+              <div className="account-panel">
                 <h2>Your account</h2>
-                <ProfileImage user={user} setUser={setUser} api={api} />
-                <label>Appearance
+                <div className="account-summary">
+                  <p className="identity">{user?.identity}</p>
+                  <span className="account-role">{user?.role === "admin" ? "Administrator" : user?.role?.replaceAll("_", " ")}</span>
+                </div>
+                <details className="account-photo-settings">
+                  <summary>Profile picture</summary>
+                  <ProfileImage user={user} setUser={setUser} api={api} />
+                </details>
+                <label className="account-appearance">Appearance
                   <select value={theme} disabled={themeSaving} onChange={(e) => changeTheme(e.target.value)}>
                     <option value="dark">Dark</option><option value="light">Light</option>
                   </select>
                 </label>
-                <small role="status">{themeSaving ? "Saving appearance…" : themeError ? "Appearance was not saved." : "Appearance is saved to your account."}</small>
-                <p className="identity">{user?.identity}</p>
-                <div className="account-access">
-                  <strong>
-                    {user?.role === "owner"
-                      ? "Owner"
-                      : user?.role === "admin"
-                        ? "Administrator"
-                        : user?.role.replace("_", " ")}
-                  </strong>
+                {(themeSaving || themeError) && <small role="status">{themeSaving ? "Saving…" : "Appearance could not be saved. Please try again."}</small>}
+                <div className="account-wallet">
                   {user?.governanceStatus === "unavailable" && (
                     <p role="status">
                       Governance is temporarily unavailable. Shared privileges
@@ -883,7 +882,7 @@ function App() {
                     (user.linkedWallet ? (
                       <>
                         <p className="identity">
-                          Linked wallet: {user.linkedWallet}
+                          <span className="account-field-label">Connected wallet</span>{user.linkedWallet}
                         </p>
                         <button
                           className="secondary"
@@ -906,22 +905,25 @@ function App() {
                         onClick={() => open("link-wallet")}
                         disabled={busy}
                       >
-                        Link Ethereum wallet
+                        Connect wallet
                       </button>
                     ))}
 
                 </div>
+                <nav className="account-actions" aria-label="Account pages">
                 <button className="secondary" onClick={() => open("referrals")}>
-                  Your referral links <ArrowUpRight size={16} />
+                  Referral links <ArrowUpRight size={16} />
                 </button>
                 {user?.staff && (
                   <button className="primary" onClick={openAdmin}>
-                    Manage store
+                    {user.vendor ? "Vendor workspace" : "Store workspace"}
                   </button>
                 )}
                 <a className="secondary" href="/account/notifications">
-                  Account notifications
+                  Notifications
                 </a>
+                </nav>
+                <section className="account-quotes">
                 <h3>Quote requests</h3>
                 {quotes.length ? (
                   quotes.map((q) => (
@@ -1003,8 +1005,9 @@ function App() {
                 ) : (
                   <p>No quote requests yet.</p>
                 )}
+                </section>
                 <button
-                  className="text-link"
+                  className="text-link account-signout"
                   onClick={() =>
                     run(async () => {
                       accountRequest.current++;
@@ -1017,7 +1020,7 @@ function App() {
                 >
                   <LogOut size={16} /> Sign out
                 </button>
-              </>
+              </div>
             )}
             {modal === "referrals" && (
               <ReferralPanel
