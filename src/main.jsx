@@ -871,13 +871,6 @@ function App() {
                         ? "Administrator"
                         : user?.role.replace("_", " ")}
                   </strong>
-                  <p>
-                    {user?.roleSource === "governance"
-                      ? "Access synced from gov.bittrees.org."
-                      : user?.roleSource === "protected_owner"
-                        ? "Protected owner access."
-                        : "Governance partners and admins can use their verified wallet for shared access."}
-                  </p>
                   {user?.governanceStatus === "unavailable" && (
                     <p role="status">
                       Governance is temporarily unavailable. Shared privileges
@@ -914,13 +907,7 @@ function App() {
                         Link Ethereum wallet
                       </button>
                     ))}
-                  {!user?.identity.includes("@") && (
-                    <p>
-                      To use the same governance access with email, sign in by
-                      email and link this wallet. Linking requires your wallet
-                      signature.
-                    </p>
-                  )}
+
                 </div>
                 <button className="secondary" onClick={() => open("referrals")}>
                   Your referral links <ArrowUpRight size={16} />
