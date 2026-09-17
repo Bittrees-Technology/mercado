@@ -52,7 +52,7 @@ export function ReferralPanel({ user, products, items, busy, share, signIn, copy
         <form onSubmit={(e) => { e.preventDefault(); renew(customCode); }}>
           <label>Custom referral code
             <input value={customCode} onChange={(e) => setCustomCode(e.target.value.toLowerCase())}
-              placeholder="e.g. mining-with-joao" required minLength={4} maxLength={32}
+              required minLength={4} maxLength={32}
               pattern="[a-zA-Z0-9][a-zA-Z0-9\-]{2,30}[a-zA-Z0-9]" autoCapitalize="none" autoCorrect="off" spellCheck={false} />
           </label>
           <p>4–32 letters, numbers or hyphens. Available codes activate immediately after validation; no staff approval is required.</p>
