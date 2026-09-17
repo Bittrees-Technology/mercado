@@ -324,7 +324,7 @@ export function AdminPages({
                     managed in governance.
                   </p>
                   <form
-                    className="inline-form"
+                    className="team-access-form"
                     onSubmit={(e) => {
                       e.preventDefault();
                       const f = Object.fromEntries(new FormData(e.target));
@@ -336,12 +336,17 @@ export function AdminPages({
                       });
                     }}
                   >
+                    <label>
+                      Email or wallet address
                     <input
                       name="identity"
                       placeholder="Email or 0x wallet address"
                       aria-label="Team member identity"
                       required
                     />
+                    </label>
+                    <label>
+                      Role
                     <select name="role" aria-label="Team member role">
                       <option value="support">Support</option>
                       <option value="dealer_manager">
@@ -360,7 +365,8 @@ export function AdminPages({
                         Vendor — own integration only
                       </option>
                     </select>
-                    <button className="secondary">Assign role</button>
+                    </label>
+                    <button className="secondary" disabled={busy}>Assign role</button>
                   </form>
                   {admin.roles.map((r) => (
                     <div className="grant" key={r.identity}>

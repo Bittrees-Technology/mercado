@@ -1807,3 +1807,38 @@ button:disabled {
 .image-upload input{max-width:100%;min-width:0}
 .image-upload small{display:block;line-height:1.5}
 .submission-image{max-width:100%;width:200px;height:160px;object-fit:contain}
+
+/* Keep the identity field usable beside long role descriptions. */
+.admin-page .team-access-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 16px;
+  margin: 24px 0;
+}
+.admin-page .team-access-form label {
+  min-width: 0;
+  margin: 0;
+  gap: 8px;
+  font-size: 14px;
+}
+.admin-page .team-access-form input,
+.admin-page .team-access-form select,
+.admin-page .team-access-form button {
+  height: 46px;
+  box-sizing: border-box;
+  margin: 0;
+}
+.admin-page .team-access-form button {
+  padding-inline: 24px;
+  white-space: nowrap;
+}
+.admin-page .roles > p {
+  line-height: 1.6;
+  max-width: 80ch;
+}
+@media (max-width: 800px) {
+  .admin-page .team-access-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
