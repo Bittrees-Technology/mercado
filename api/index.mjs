@@ -1,3 +1,4 @@
+import {handleRoleFeed} from '../lib/roles-feed.mjs';
 import { prepareImage, publishImage } from "../lib/ipfs.mjs";
 import { customReferralCode, validReferralCode } from "../lib/referrals.mjs";
 import {
@@ -141,6 +142,7 @@ export default async function handler(req, res) {
   try {
     const url = new URL(req.url, origin()),
       route = url.pathname.replace(/^\/api\/?/, "");
+ if(route==='roles-feed')return handleRoleFeed(req,res);
     let body = req.body || {};
     if (typeof body === "string") {
       if (
