@@ -719,6 +719,7 @@ function App() {
           </>
         ) : (
           <EquipmentPage
+            api={api}
             canEdit={user?.canProducts}
             collections={products}
             items={items}

@@ -1863,3 +1863,15 @@ button:disabled {
 .modal .account-quotes h3 { margin: 0 0 12px; font-size: 16px; }
 .modal .account-quotes > p { margin: 0; font-size: 14px; }
 .modal .account-signout { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 20px; }
+
+.product-table-scroll { overflow-x: auto; margin: 1rem 0; }
+.product-table { width: 100%; border-collapse: collapse; text-align: left; }
+.product-table th, .product-table td { padding: .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.product-table th { font-size: .8rem; }
+.product-table input[type="checkbox"] { width: 18px; height: 18px; }
+.product-row-actions, .visibility-action { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; }
+.product-row-actions { min-width: 180px; }
+.visibility-action [role="status"] { font-size: .85rem; }
+.product-history { margin: 1.25rem 0; }
+.product-history li { margin: .8rem 0; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .product-table th, .product-table td { padding: .6rem; } }

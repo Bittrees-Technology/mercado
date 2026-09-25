@@ -1,3 +1,4 @@
+import { VisibilityAction, ProductHistory, ProductTable } from "./ProductControls.jsx";
 import { ProgressiveProducts } from "./ProgressiveProducts.jsx";
 import { CsvImport } from "./CsvImport.jsx";
 import {
@@ -81,6 +82,7 @@ function Source({ item }) {
   );
 }
 export function EquipmentPage({
+  api,
   canEdit = false,
   collections,
   items,
@@ -112,11 +114,21 @@ export function EquipmentPage({
     }));
   };
   const parts = location.pathname.split("/").filter(Boolean);
-  const domain = collections.find((p) => p.id === parts[1]),
-    selected = parts[2]
+  const domain = collections.find((p) => p.id === parts[1]);
+  let selected = parts[2]
       ? items.find((p) => p.id === parts[2] && p.product_id === domain?.id)
       : null;
-  if (loading)
+  const [preview, setPreview] = useState(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  useEffect(() => {
+    if (!canEdit || !parts[2] || !new URLSearchParams(location.search).has("preview")) return;
+    let current = true;
+    setPreviewLoading(true);
+    api("admin").then(r => { if(current) setPreview(r.items.find(p => p.id === parts[2] && p.product_id === domain?.id) || null); }).finally(() => { if(current) setPreviewLoading(false); }).catch(() => {});
+    return () => {current=false;};
+  }, [canEdit, parts[2], domain?.id]);
+  selected = (canEdit ? preview : null) || selected;
+  if (loading || previewLoading)
     return (
       <section className="equipment-page">
         <p>Loading products…</p>
@@ -130,7 +142,8 @@ export function EquipmentPage({
   )
     return (
       <section className="equipment-page">
-        <h1>Collection not found.</h1>
+        <h1>{domain && parts[2] ? "This product is no longer available." : "Collection not found."}</h1>
+        {domain && <><p>Explore other {domain.name.toLowerCase()} products or request help finding an alternative.</p><a className="secondary" href={equipmentLink(domain.id, referral)}>Browse {domain.name}</a><h2>Related products</h2><ul>{items.filter(p => p.product_id === domain.id).slice(0,4).map(p => <li key={p.id}><a href={equipmentLink(domain.id,referral,p.id)}>{p.name}</a></li>)}</ul></>}
         <a className="primary" href="/">
           Browse equipment
         </a>
@@ -311,13 +324,15 @@ export function EquipmentPage({
           taxes are confirmed by quote.
         </p>
       )}
+      {selected && canEdit && !selected.active && <p role="status">Hidden product · Only catalog staff can preview this listing.</p>}
       {selected && canEdit && (
+        <div className="product-row-actions"><VisibilityAction items={[selected]} active={!selected.active} api={api} onChanged={active => { setPreview({ ...selected, active }); }} />
         <a
           className="secondary"
           href={"/admin/products?item=" + encodeURIComponent(selected.id)}
         >
           Edit this product
-        </a>
+        </a></div>
       )}
       {selected ? (
         <div className="item-detail">
@@ -490,7 +505,6 @@ export function ProductManager({
 }) {
   const [edit, setEdit] = useState(null),
     [image, setImage] = useState(""),
-    [filter, setFilter] = useState(""),
     [editorOpen, setEditorOpen] = useState(false);
   const initialized = useRef(false);
   useEffect(() => {
@@ -549,15 +563,6 @@ export function ProductManager({
         copies.
       </p>
       <div className="admin-toolbar">
-        <label>
-          Search products
-          <input
-            type="search"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Product name, ID or supplier"
-          />
-        </label>
         {edit?.id && (
           <>
             <a
@@ -586,30 +591,8 @@ export function ProductManager({
           Add product
         </button>
       </div>
-      <label>
-        Find an existing product
-        <select
-          value={edit?.id || ""}
-          onChange={(e) =>
-            choose(items.find((i) => i.id === e.target.value) || null)
-          }
-        >
-          <option value="">Add a new product</option>
-          {items
-            .filter((i) =>
-              [i.name, i.id, i.source_name]
-                .join(" ")
-                .toLowerCase()
-                .includes(filter.toLowerCase()),
-            )
-            .map((i) => (
-              <option key={i.id} value={i.id}>
-                {i.name}
-                {!i.active ? " — hidden" : ""}
-              </option>
-            ))}
-        </select>
-      </label>
+      <ProductTable items={items} collections={collections} choose={choose} api={api} refresh={refresh} />
+      {edit?.id && <ProductHistory id={edit.id} api={api} version={edit.edit_version || edit.updated_at} />}
       <details
         className="admin-editor"
         open={editorOpen}
@@ -632,7 +615,7 @@ export function ProductManager({
                 "-" +
                 crypto.randomUUID().slice(0, 8);
             run(async () => {
-              await api("admin/item", {
+              const saved = await api("admin/item", {
                 ...data,
                 image_url: image,
                 create_only: !edit?.id,
@@ -642,12 +625,8 @@ export function ProductManager({
                 active: data.visibility === "active",
               });
               await refresh();
-              setEdit(null);
-              setEditorOpen(false);
-              setImage("");
-              notify(
-                "Product saved. Pricing and images are updated on the site.",
-              );
+              choose(saved.item);
+              notify(saved.item.active ? "Product saved and published." : "Product saved as hidden.");
             });
           }}
         >

@@ -1,3 +1,4 @@
+import { visibilityInput } from "../lib/product-visibility.mjs";
 import {handleRoleFeed} from '../lib/roles-feed.mjs';
 import { prepareImage, publishImage } from "../lib/ipfs.mjs";
 import { customReferralCode, validReferralCode } from "../lib/referrals.mjs";
@@ -701,7 +702,7 @@ export default async function handler(req, res) {
       !u.canQuotes
     )
       return json(res, 403, { error: "Quote manager access required" });
-    if ((route === "admin/item" || route === "admin/image") && !u.canProducts)
+    if ((route.startsWith("admin/item") || route === "admin/image") && !u.canProducts)
       return json(res, 403, { error: "Product manager access required" });
     if (route === "admin/workflow-rule" && req.method === "POST") {
       if (!u.owner) return json(res, 403, { error: "Owner access required" });
@@ -815,6 +816,30 @@ export default async function handler(req, res) {
       await audit(u.identity, "review_product", body.id + ":" + body.status);
       return json(res, 200, { ok: true });
     }
+    if (route === "admin/item-history" && req.method === "GET") {
+      const id = url.searchParams.get("id");
+      const events = await sql()`SELECT actor,action,created_at FROM marcada.audit WHERE detail=${id} AND action IN ('save_product','publish_product','unpublish_product') ORDER BY created_at DESC LIMIT 100`;
+      return json(res, 200, { events });
+    }
+    if (route === "admin/item-visibility" && req.method === "POST") {
+      const change = visibilityInput(body);
+      const result = await sql()`WITH requested AS (
+        SELECT * FROM jsonb_to_recordset(${JSON.stringify(change.items)}::jsonb) AS r(id text, active boolean)
+      ), locked AS MATERIALIZED (
+        SELECT i.id,i.active FROM marcada.items i JOIN requested r ON r.id=i.id FOR UPDATE OF i
+      ), eligible AS (
+        SELECT l.id FROM locked l JOIN requested r ON r.id=l.id WHERE l.active=r.active
+      ), changed AS (
+        UPDATE marcada.items i SET active=${change.active},updated_at=now()
+        WHERE i.id IN (SELECT id FROM eligible) AND (SELECT count(*) FROM eligible)=${change.items.length}
+        RETURNING i.id,i.active
+      ), logged AS (
+        INSERT INTO marcada.audit(id,actor,action,detail)
+        SELECT gen_random_uuid(),${u.identity},${change.active ? 'publish_product' : 'unpublish_product'},id FROM changed
+      ) SELECT * FROM changed`;
+      if (result.length !== change.items.length) return json(res, 409, { error: "A product changed or is unavailable. Refresh and try again; no products were changed." });
+      return json(res, 200, { items: result });
+    }
     if (route === "admin/item" && req.method === "POST") {
       const p = itemInput(body);
       if (
@@ -824,14 +849,13 @@ export default async function handler(req, res) {
       )
         return json(res, 400, { error: "Unknown collection" });
       const saved =
-        await sql()`INSERT INTO marcada.items(id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status) VALUES(${p.id},${p.product_id},${p.name},${p.description},${p.price},${p.currency},${p.price_kind},${p.price_checked},${p.source_url},${p.source_name},${p.image_url},${p.image_credit},${p.hashrate || ""},${p.model_group || ""},${p.specifications},${p.active},${p.supplier_region},${p.tax_note},${p.configuration_note},${p.supplier_status}) ON CONFLICT(id) DO UPDATE SET product_id=EXCLUDED.product_id,name=EXCLUDED.name,description=EXCLUDED.description,price=EXCLUDED.price,currency=EXCLUDED.currency,price_kind=EXCLUDED.price_kind,price_checked=EXCLUDED.price_checked,source_url=EXCLUDED.source_url,source_name=EXCLUDED.source_name,image_url=EXCLUDED.image_url,image_credit=EXCLUDED.image_credit,hashrate=EXCLUDED.hashrate,model_group=EXCLUDED.model_group,specifications=EXCLUDED.specifications,active=EXCLUDED.active,supplier_region=EXCLUDED.supplier_region,tax_note=EXCLUDED.tax_note,configuration_note=EXCLUDED.configuration_note,supplier_status=EXCLUDED.supplier_status,updated_at=now() WHERE ${body.create_only !== true} AND (${body.expected_updated_at || null}::timestamptz IS NULL OR marcada.items.updated_at=${body.expected_updated_at || null}::timestamptz) RETURNING id`;
+        await sql()`WITH saved AS (INSERT INTO marcada.items(id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status) VALUES(${p.id},${p.product_id},${p.name},${p.description},${p.price},${p.currency},${p.price_kind},${p.price_checked},${p.source_url},${p.source_name},${p.image_url},${p.image_credit},${p.hashrate || ""},${p.model_group || ""},${p.specifications},${p.active},${p.supplier_region},${p.tax_note},${p.configuration_note},${p.supplier_status}) ON CONFLICT(id) DO UPDATE SET product_id=EXCLUDED.product_id,name=EXCLUDED.name,description=EXCLUDED.description,price=EXCLUDED.price,currency=EXCLUDED.currency,price_kind=EXCLUDED.price_kind,price_checked=EXCLUDED.price_checked,source_url=EXCLUDED.source_url,source_name=EXCLUDED.source_name,image_url=EXCLUDED.image_url,image_credit=EXCLUDED.image_credit,hashrate=EXCLUDED.hashrate,model_group=EXCLUDED.model_group,specifications=EXCLUDED.specifications,active=EXCLUDED.active,supplier_region=EXCLUDED.supplier_region,tax_note=EXCLUDED.tax_note,configuration_note=EXCLUDED.configuration_note,supplier_status=EXCLUDED.supplier_status,updated_at=now() WHERE ${body.create_only !== true} AND (${body.expected_updated_at || null}::timestamptz IS NULL OR marcada.items.updated_at=${body.expected_updated_at || null}::timestamptz) RETURNING *,updated_at::text AS edit_version), logged AS (INSERT INTO marcada.audit(id,actor,action,detail) SELECT gen_random_uuid(),${u.identity},'save_product',id FROM saved) SELECT * FROM saved`;
       if (!saved.length)
         return json(res, 409, {
           error:
             "Product already exists or was changed by another editor. Reload before saving, or use a new ID.",
         });
-      await audit(u.identity, "save_product", p.id);
-      return json(res, 200, { id: p.id });
+      return json(res, 200, { id: p.id, item: saved[0] });
     }
     if (route === "admin/role" && req.method === "POST") {
       const identity = normalizeIdentity(body.identity);
