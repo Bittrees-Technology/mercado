@@ -57,11 +57,11 @@ export function AdminPages({
   const page = location.pathname.split("/")[2] || "overview";
   const pages = [
     ["overview", "Overview", true],
-    ["products", "Products", user?.canProducts],
+    ["products", user?.vendorApproved ? "My products" : "Products", user?.canProducts || user?.vendorApproved],
     ["offers", "Dealer offers", user?.canDeals],
     ["quotes", "Quotes", user?.canQuotes],
     ["vendors", "Vendors", user?.canVendors || user?.vendor],
-    ["submissions", "Product submissions", user?.canProducts || user?.vendor],
+    ["submissions", "Past submissions", user?.canProducts || (user?.vendor && !user?.vendorApproved)],
     ["team", "Team access", user?.owner],
     ["notifications", "Notifications", user?.owner],
   ];
@@ -78,7 +78,7 @@ export function AdminPages({
         <h1>Staff access required</h1>
       </section>
     );
-  const allowed = pages.some(([id, , ok]) => id === page && ok);
+  const allowed = pages.some(([id, , ok]) => id === page && ok) || (page === "submissions" && user.vendorApproved);
   return (
     <section className="equipment-page admin-page" aria-busy={busy || !admin}>
       <header className="admin-heading">
@@ -207,10 +207,13 @@ export function AdminPages({
           )}
           <>
             <>
-              {page === "products" && user.canProducts && (
+              {page === "products" && (user.canProducts || user.vendorApproved) && (
                 <>
                   {" "}
                   <ProductManager
+                    vendorMode={!user.canProducts}
+                    vendorName={user.vendorName || ""}
+                    vendors={admin.productVendors || []}
                     items={admin.items || []}
                     submissions={admin.productSubmissions || []}
                     collections={products}

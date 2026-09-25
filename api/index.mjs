@@ -86,8 +86,14 @@ async function user(req) {
       : localRoles.includes(r?.role)
         ? r.role
         : "customer";
+  const [vendorProfile] = role === "vendor"
+    ? await sql()`SELECT status,name FROM marcada.vendor_integrations WHERE identity=${s.identity}`
+    : [];
   return {
     ...s,
+    vendorApproved: role === "vendor" && vendorProfile?.status === "approved",
+    vendorName: vendorProfile?.name || "",
+
     linkedWallet: link?.wallet || null,
     linkedEmail: link?.email || null,
     governanceStatus: governance.status,
@@ -199,7 +205,7 @@ export default async function handler(req, res) {
       const [products, offers, items] = await Promise.all([
         sql()`SELECT * FROM marcada.products WHERE active ORDER BY CASE WHEN id='bitaxe' THEN 0 ELSE 1 END,name`,
         sql()`SELECT o.id,o.product_id,o.item_id,o.dealer,o.price,o.currency,o.private,o.expires_at FROM marcada.offers o WHERE o.active AND (o.expires_at IS NULL OR o.expires_at>now()) AND (NOT o.private OR ${u?.canDeals || false} OR EXISTS(SELECT 1 FROM marcada.offer_grants g WHERE g.offer_id=o.id AND g.identity=${u?.identity || ""}))`,
-        sql()`SELECT * FROM marcada.items WHERE active ORDER BY product_id,name`,
+        sql()`SELECT id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status,updated_at FROM marcada.items WHERE active AND deleted_at IS NULL ORDER BY product_id,name`,
       ]);
       return json(res, 200, {
         products,
@@ -384,7 +390,7 @@ export default async function handler(req, res) {
         return json(res, 400, { error: "Choose a product or profile image." });
       if (purpose === "product" && !u.canProducts && !u.vendor)
         return json(res, 403, { error: "Vendor or catalog access required." });
-      if (route === "admin/image" && !u.canProducts)
+      if (route === "admin/image" && !u.canProducts && !u.vendorApproved)
         return json(res, 403, { error: "Product manager access required." });
       await limited(req, "image-upload:" + u.identity, 10);
       const [count] =
@@ -702,8 +708,8 @@ export default async function handler(req, res) {
       !u.canQuotes
     )
       return json(res, 403, { error: "Quote manager access required" });
-    if ((route.startsWith("admin/item") || route === "admin/image") && !u.canProducts)
-      return json(res, 403, { error: "Product manager access required" });
+    if ((route.startsWith("admin/item") || route === "admin/image") && !u.canProducts && !u.vendorApproved)
+      return json(res, 403, { error: "Approved vendor or product manager access required" });
     if (route === "admin/workflow-rule" && req.method === "POST") {
       if (!u.owner) return json(res, 403, { error: "Owner access required" });
       const r = workflowRule(body);
@@ -818,7 +824,9 @@ export default async function handler(req, res) {
     }
     if (route === "admin/item-history" && req.method === "GET") {
       const id = url.searchParams.get("id");
-      const events = await sql()`SELECT actor,action,created_at FROM marcada.audit WHERE detail=${id} AND action IN ('save_product','publish_product','unpublish_product') ORDER BY created_at DESC LIMIT 100`;
+      if (!u.canProducts && !(await sql()`SELECT 1 FROM marcada.items WHERE id=${id} AND vendor_identity=${u.identity} AND deleted_at IS NULL`).length)
+        return json(res, 404, { error: "Product not found" });
+      const events = await sql()`SELECT actor,action,created_at FROM marcada.audit WHERE detail=${id} AND action IN ('save_product','publish_product','unpublish_product','delete_product') ORDER BY created_at DESC LIMIT 100`;
       return json(res, 200, { events });
     }
     if (route === "admin/item-visibility" && req.method === "POST") {
@@ -826,7 +834,7 @@ export default async function handler(req, res) {
       const result = await sql()`WITH requested AS (
         SELECT * FROM jsonb_to_recordset(${JSON.stringify(change.items)}::jsonb) AS r(id text, active boolean)
       ), locked AS MATERIALIZED (
-        SELECT i.id,i.active FROM marcada.items i JOIN requested r ON r.id=i.id FOR UPDATE OF i
+        SELECT i.id,i.active FROM marcada.items i JOIN requested r ON r.id=i.id WHERE i.deleted_at IS NULL AND (${u.canProducts} OR (i.vendor_identity=${u.identity} AND EXISTS(SELECT 1 FROM marcada.vendor_integrations v WHERE v.identity=${u.identity} AND v.status='approved'))) FOR UPDATE OF i
       ), eligible AS (
         SELECT l.id FROM locked l JOIN requested r ON r.id=l.id WHERE l.active=r.active
       ), changed AS (
@@ -840,8 +848,23 @@ export default async function handler(req, res) {
       if (result.length !== change.items.length) return json(res, 409, { error: "A product changed or is unavailable. Refresh and try again; no products were changed." });
       return json(res, 200, { items: result });
     }
+    if (route === "admin/item-delete" && req.method === "POST") {
+      const rows = await sql()`WITH removed AS (
+        UPDATE marcada.items SET active=false,deleted_at=now(),updated_at=now()
+        WHERE id=${String(body.id || '')} AND deleted_at IS NULL
+        AND (${u.canProducts} OR (vendor_identity=${u.identity} AND EXISTS(SELECT 1 FROM marcada.vendor_integrations v WHERE v.identity=${u.identity} AND v.status='approved')))
+        AND updated_at=${body.expected_updated_at || null}::timestamptz
+        RETURNING id
+      ), logged AS (INSERT INTO marcada.audit(id,actor,action,detail) SELECT gen_random_uuid(),${u.identity},'delete_product',id FROM removed)
+      SELECT * FROM removed`;
+      if (!rows.length) return json(res, 409, { error: "Product unavailable or changed. Refresh before deleting." });
+      return json(res, 200, { ok: true });
+    }
     if (route === "admin/item" && req.method === "POST") {
-      const p = itemInput(body);
+      const p = itemInput(u.canProducts ? body : {...body, source_name:u.vendorName});
+      const vendorIdentity = u.canProducts ? (body.vendor_identity || null) : u.identity;
+      if (u.canProducts && vendorIdentity && !(await sql()`SELECT 1 FROM marcada.vendor_integrations WHERE identity=${vendorIdentity}`).length)
+        return json(res,400,{error:"Choose a registered vendor account"});
       if (
         !(
           await sql()`SELECT 1 FROM marcada.products WHERE id=${p.product_id} AND active`
@@ -849,7 +872,7 @@ export default async function handler(req, res) {
       )
         return json(res, 400, { error: "Unknown collection" });
       const saved =
-        await sql()`WITH saved AS (INSERT INTO marcada.items(id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status) VALUES(${p.id},${p.product_id},${p.name},${p.description},${p.price},${p.currency},${p.price_kind},${p.price_checked},${p.source_url},${p.source_name},${p.image_url},${p.image_credit},${p.hashrate || ""},${p.model_group || ""},${p.specifications},${p.active},${p.supplier_region},${p.tax_note},${p.configuration_note},${p.supplier_status}) ON CONFLICT(id) DO UPDATE SET product_id=EXCLUDED.product_id,name=EXCLUDED.name,description=EXCLUDED.description,price=EXCLUDED.price,currency=EXCLUDED.currency,price_kind=EXCLUDED.price_kind,price_checked=EXCLUDED.price_checked,source_url=EXCLUDED.source_url,source_name=EXCLUDED.source_name,image_url=EXCLUDED.image_url,image_credit=EXCLUDED.image_credit,hashrate=EXCLUDED.hashrate,model_group=EXCLUDED.model_group,specifications=EXCLUDED.specifications,active=EXCLUDED.active,supplier_region=EXCLUDED.supplier_region,tax_note=EXCLUDED.tax_note,configuration_note=EXCLUDED.configuration_note,supplier_status=EXCLUDED.supplier_status,updated_at=now() WHERE ${body.create_only !== true} AND (${body.expected_updated_at || null}::timestamptz IS NULL OR marcada.items.updated_at=${body.expected_updated_at || null}::timestamptz) RETURNING *,updated_at::text AS edit_version), logged AS (INSERT INTO marcada.audit(id,actor,action,detail) SELECT gen_random_uuid(),${u.identity},'save_product',id FROM saved) SELECT * FROM saved`;
+        await sql()`WITH saved AS (INSERT INTO marcada.items(id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status,vendor_identity) SELECT ${p.id},${p.product_id},${p.name},${p.description},${p.price},${p.currency},${p.price_kind},${p.price_checked},${p.source_url},${p.source_name},${p.image_url},${p.image_credit},${p.hashrate || ""},${p.model_group || ""},${p.specifications},${p.active},${p.supplier_region},${p.tax_note},${p.configuration_note},${p.supplier_status},${vendorIdentity} WHERE (${u.canProducts} OR EXISTS(SELECT 1 FROM marcada.vendor_integrations v WHERE v.identity=${u.identity} AND v.status='approved')) ON CONFLICT(id) DO UPDATE SET vendor_identity=CASE WHEN ${u.canProducts && Object.hasOwn(body,"vendor_identity")} THEN EXCLUDED.vendor_identity ELSE marcada.items.vendor_identity END,product_id=EXCLUDED.product_id,name=EXCLUDED.name,description=EXCLUDED.description,price=EXCLUDED.price,currency=EXCLUDED.currency,price_kind=EXCLUDED.price_kind,price_checked=EXCLUDED.price_checked,source_url=EXCLUDED.source_url,source_name=EXCLUDED.source_name,image_url=EXCLUDED.image_url,image_credit=EXCLUDED.image_credit,hashrate=EXCLUDED.hashrate,model_group=EXCLUDED.model_group,specifications=EXCLUDED.specifications,active=EXCLUDED.active,supplier_region=EXCLUDED.supplier_region,tax_note=EXCLUDED.tax_note,configuration_note=EXCLUDED.configuration_note,supplier_status=EXCLUDED.supplier_status,updated_at=now() WHERE marcada.items.deleted_at IS NULL AND (${u.canProducts} OR (marcada.items.vendor_identity=${u.identity} AND EXISTS(SELECT 1 FROM marcada.vendor_integrations v WHERE v.identity=${u.identity} AND v.status='approved'))) AND ${body.create_only !== true} AND (${body.expected_updated_at || null}::timestamptz IS NULL OR marcada.items.updated_at=${body.expected_updated_at || null}::timestamptz) RETURNING *,updated_at::text AS edit_version), logged AS (INSERT INTO marcada.audit(id,actor,action,detail) SELECT gen_random_uuid(),${u.identity},'save_product',id FROM saved) SELECT * FROM saved`;
       if (!saved.length)
         return json(res, 409, {
           error:
@@ -910,7 +933,7 @@ export default async function handler(req, res) {
       const notes = String(body.notes || "").slice(0, 2000);
       const db = sql();
       const vendorWrites = [
-        db`INSERT INTO marcada.vendor_integrations(identity,name,website,contact_email,feed_url,feed_format,notes,status) VALUES(${identity},${name},${website},${contact},${feed},${format},${notes},${status}) ON CONFLICT(identity) DO UPDATE SET name=EXCLUDED.name,website=EXCLUDED.website,contact_email=EXCLUDED.contact_email,feed_url=EXCLUDED.feed_url,feed_format=EXCLUDED.feed_format,notes=EXCLUDED.notes,status=EXCLUDED.status,updated_at=now()`,
+        db`INSERT INTO marcada.vendor_integrations(identity,name,website,contact_email,feed_url,feed_format,notes,status) VALUES(${identity},${name},${website},${contact},${feed},${format},${notes},${status}) ON CONFLICT(identity) DO UPDATE SET name=EXCLUDED.name,website=EXCLUDED.website,contact_email=EXCLUDED.contact_email,feed_url=EXCLUDED.feed_url,feed_format=EXCLUDED.feed_format,notes=EXCLUDED.notes,status=CASE WHEN ${!u.canVendors} AND marcada.vendor_integrations.status IN ('approved','paused') THEN marcada.vendor_integrations.status ELSE EXCLUDED.status END,updated_at=now()`,
       ];
       const eventKey =
         "vendor/" +
@@ -958,10 +981,13 @@ export default async function handler(req, res) {
           : u.vendor
             ? sql()`SELECT * FROM marcada.product_submissions WHERE identity=${u.identity} ORDER BY updated_at DESC LIMIT 100`
             : [],
+        productVendors: u.canProducts ? sql()`SELECT identity,name,status FROM marcada.vendor_integrations ORDER BY name` : [],
         notificationSettings: u.owner ? notificationSettings(sql()) : null,
         items: u.canProducts
-          ? sql()`SELECT *,updated_at::text AS edit_version FROM marcada.items ORDER BY product_id,name`
-          : [],
+          ? sql()`SELECT *,updated_at::text AS edit_version FROM marcada.items WHERE deleted_at IS NULL ORDER BY product_id,name`
+          : u.vendorApproved
+            ? sql()`SELECT *,updated_at::text AS edit_version FROM marcada.items WHERE vendor_identity=${u.identity} AND deleted_at IS NULL ORDER BY name`
+            : [],
         vendors: u.canVendors
           ? sql()`SELECT * FROM marcada.vendor_integrations ORDER BY name`
           : u.vendor

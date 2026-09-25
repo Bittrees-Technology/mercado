@@ -721,6 +721,7 @@ function App() {
           <EquipmentPage
             api={api}
             canEdit={user?.canProducts}
+            vendorApproved={user?.vendorApproved}
             collections={products}
             items={items}
             loading={loading}

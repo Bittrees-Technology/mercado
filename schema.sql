@@ -90,3 +90,6 @@ ALTER TABLE marcada.items DROP CONSTRAINT IF EXISTS items_price_kind_check;
 ALTER TABLE marcada.items ADD CONSTRAINT items_price_kind_check CHECK (price_kind IN ('reference','asking','quote'));
 ALTER TABLE marcada.items DROP CONSTRAINT IF EXISTS items_quote_price_check;
 ALTER TABLE marcada.items ADD CONSTRAINT items_quote_price_check CHECK ((price_kind='quote' AND price IS NULL) OR (price_kind<>'quote' AND price IS NOT NULL));
+ALTER TABLE marcada.items ADD COLUMN IF NOT EXISTS vendor_identity text;
+ALTER TABLE marcada.items ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+CREATE INDEX IF NOT EXISTS items_vendor_identity_idx ON marcada.items(vendor_identity);

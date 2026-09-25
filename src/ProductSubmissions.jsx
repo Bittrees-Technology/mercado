@@ -34,6 +34,7 @@ export function ProductSubmissions({
     );
     reset();
   };
+  if (user.vendorApproved) return <section><h2>Manage your products directly</h2><p>Your business is approved. Product changes no longer need individual review.</p><a className="primary" href="/admin/products">Manage my products</a></section>;
   return (
     <section>
       <h2>Product submissions</h2>

@@ -83,7 +83,8 @@ function Source({ item }) {
 }
 export function EquipmentPage({
   api,
-  canEdit = false,
+  canEdit: staffCanEdit = false,
+  vendorApproved = false,
   collections,
   items,
   loading,
@@ -119,14 +120,15 @@ export function EquipmentPage({
       ? items.find((p) => p.id === parts[2] && p.product_id === domain?.id)
       : null;
   const [preview, setPreview] = useState(null);
+  const canEdit = staffCanEdit || (vendorApproved && preview?.id === parts[2]);
   const [previewLoading, setPreviewLoading] = useState(false);
   useEffect(() => {
-    if (!canEdit || !parts[2] || !new URLSearchParams(location.search).has("preview")) return;
+    if (!(staffCanEdit || vendorApproved) || !parts[2] || (!vendorApproved && !new URLSearchParams(location.search).has("preview"))) return;
     let current = true;
     setPreviewLoading(true);
     api("admin").then(r => { if(current) setPreview(r.items.find(p => p.id === parts[2] && p.product_id === domain?.id) || null); }).finally(() => { if(current) setPreviewLoading(false); }).catch(() => {});
     return () => {current=false;};
-  }, [canEdit, parts[2], domain?.id]);
+  }, [staffCanEdit, vendorApproved, parts[2], domain?.id]);
   selected = (canEdit ? preview : null) || selected;
   if (loading || previewLoading)
     return (
@@ -324,7 +326,7 @@ export function EquipmentPage({
           taxes are confirmed by quote.
         </p>
       )}
-      {selected && canEdit && !selected.active && <p role="status">Hidden product · Only catalog staff can preview this listing.</p>}
+      {selected && canEdit && !selected.active && <p role="status">Hidden product · Visible only to authorized product managers.</p>}
       {selected && canEdit && (
         <div className="product-row-actions"><VisibilityAction items={[selected]} active={!selected.active} api={api} onChanged={active => { setPreview({ ...selected, active }); }} />
         <a
@@ -494,6 +496,9 @@ export function EquipmentPage({
   );
 }
 export function ProductManager({
+  vendorMode = false,
+  vendorName = "",
+  vendors = [],
   submissions = [],
   items,
   collections,
@@ -544,18 +549,20 @@ export function ProductManager({
     price_kind: "asking",
     price_checked: "",
     active: false,
+    source_name: vendorName,
   };
   const p = edit || fresh;
   return (
     <section className="product-manager">
-      <h3>Products, pricing & photos</h3>
-      <CsvImport
+      <h3>{vendorMode ? "Your products" : "Products, pricing & photos"}</h3>
+      {vendorMode && <p>Add and publish products directly. You can edit, hide or delete your own listings here.</p>}
+      {!vendorMode && <CsvImport
         items={items}
         collections={collections}
         api={api}
         refresh={refresh}
         notify={notify}
-      />
+      />}
       <p>
         Products appear inside their equipment collection. Photos are public.
         Upload JPEG, PNG or WebP up to 1 MB, or use an HTTPS image URL. Uploaded
@@ -591,7 +598,7 @@ export function ProductManager({
           Add product
         </button>
       </div>
-      <ProductTable items={items} collections={collections} choose={choose} api={api} refresh={refresh} />
+      <ProductTable onDeleted={id => { if(edit?.id === id) { setEdit(null); setEditorOpen(false); } }} items={items} collections={collections} choose={choose} api={api} refresh={refresh} />
       {edit?.id && <ProductHistory id={edit.id} api={api} version={edit.edit_version || edit.updated_at} />}
       <details
         className="admin-editor"
@@ -630,6 +637,7 @@ export function ProductManager({
             });
           }}
         >
+          {!vendorMode && <label>Vendor account<select name="vendor_identity" defaultValue={p.vendor_identity || ""}><option value="">Managed by Mercado</option>{p.vendor_identity && !vendors.some(v=>v.identity===p.vendor_identity) && <option value={p.vendor_identity}>{p.vendor_identity}</option>}{vendors.map(v=><option key={v.identity} value={v.identity}>{v.name} · {v.status}</option>)}</select><small>Only this vendor and catalog staff can manage the assigned listing.</small></label>}
           <label>
             Product ID
             <input
@@ -705,7 +713,8 @@ export function ProductManager({
             Source name
             <input
               name="source_name"
-              defaultValue={p.source_name}
+              readOnly={vendorMode}
+              defaultValue={vendorMode ? vendorName : p.source_name}
               maxLength={100}
             />
           </label>
