@@ -21,8 +21,8 @@ export const equipmentLink = (id, ref = "", item = "") =>
   (ref ? "?ref=" + encodeURIComponent(ref) : "");
 export function ProductImage({ item }) {
   const [failed, setFailed] = useState(false);
-  return failed ? (
-    <div className="photo-missing">Image unavailable</div>
+  return failed || !item.image_url ? (
+    <div className="photo-missing">Product photo pending</div>
   ) : (
     <img
       src={item.image_url}
@@ -35,6 +35,7 @@ export function ProductImage({ item }) {
   );
 }
 export function Price({ item }) {
+  if (item.price_kind === "quote" || item.price == null) return <div className="item-price"><strong>Price on request</strong><span>Confirm configuration and availability</span></div>;
   return (
     <div className="item-price">
       <strong>
@@ -61,7 +62,7 @@ function Source({ item }) {
           {item.source_name || "Supplier"} source <ArrowUpRight size={12} />
         </a>
       )}
-      <span>Checked {String(item.price_checked).slice(0, 10)}</span>
+      <span>{item.price_kind === "quote" ? "Source reviewed" : "Price checked"} {String(item.price_checked).slice(0, 10)}</span>
       <span>
         {{
           US: "US supplier market",
@@ -698,8 +699,7 @@ export function ProductManager({
               min="0"
               max="99999999.99"
               step="0.01"
-              defaultValue={p.price}
-              required
+              defaultValue={p.price ?? ""}
             />
           </label>
           <label>
@@ -715,6 +715,7 @@ export function ProductManager({
             <select name="price_kind" defaultValue={p.price_kind}>
               <option value="asking">Listed price</option>
               <option value="reference">Supplier reference price</option>
+              <option value="quote">Price on request</option>
             </select>
           </label>
           <label>
@@ -744,7 +745,6 @@ export function ProductManager({
             <input
               value={image}
               onChange={(e) => setImage(e.target.value)}
-              required
               placeholder="https://… or upload below"
             />
           </label>
@@ -949,7 +949,7 @@ function VendorOffers({ items, domain, referral, selectedId }) {
               </span>
               <span className="vendor-offer-price">
                 <strong>
-                  {new Intl.NumberFormat("en", {
+                  {item.price == null ? "Price on request" : new Intl.NumberFormat("en", {
                     style: "currency",
                     currency: item.currency,
                   }).format(item.price)}

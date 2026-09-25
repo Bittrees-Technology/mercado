@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { fields, parseCsv, problems } from "../lib/csv.mjs";
 const choices = {
   currency: ["USD", "EUR", "GBP", "MXN", "CAD", "AUD"],
-  price_kind: ["reference", "asking"],
+  price_kind: ["reference", "asking", "quote"],
   active: ["false", "true"],
   supplier_status: ["Unknown", "InStock", "OutOfStock"],
   supplier_region: ["Unverified", "US", "EU", "CA", "CN"],

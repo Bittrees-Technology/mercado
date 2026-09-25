@@ -84,3 +84,9 @@ ALTER TABLE marcada.users ADD COLUMN IF NOT EXISTS theme_updated_at timestamptz;
 ALTER TABLE marcada.users ADD COLUMN IF NOT EXISTS avatar_url text;
 ALTER TABLE marcada.users ADD COLUMN IF NOT EXISTS avatar_cid text;
 CREATE TABLE IF NOT EXISTS marcada.ipfs_uploads(id uuid PRIMARY KEY,identity text NOT NULL REFERENCES marcada.users(identity) ON DELETE CASCADE,purpose text NOT NULL CHECK(purpose IN ('product','profile')),cid text NOT NULL,url text NOT NULL,mime text NOT NULL,bytes integer NOT NULL CHECK(bytes BETWEEN 1 AND 1048576),created_at timestamptz NOT NULL DEFAULT now(),UNIQUE(identity,purpose,cid));
+
+ALTER TABLE marcada.items ALTER COLUMN price DROP NOT NULL;
+ALTER TABLE marcada.items DROP CONSTRAINT IF EXISTS items_price_kind_check;
+ALTER TABLE marcada.items ADD CONSTRAINT items_price_kind_check CHECK (price_kind IN ('reference','asking','quote'));
+ALTER TABLE marcada.items DROP CONSTRAINT IF EXISTS items_quote_price_check;
+ALTER TABLE marcada.items ADD CONSTRAINT items_quote_price_check CHECK ((price_kind='quote' AND price IS NULL) OR (price_kind<>'quote' AND price IS NOT NULL));

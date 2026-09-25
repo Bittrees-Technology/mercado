@@ -59,3 +59,9 @@ test("hash rates retain units and conditions, are optional and bounded", () => {
     200,
   );
 });
+
+test('quote-only listings preserve missing prices and optional photography', () => {
+  assert.equal(itemInput({...valid, price_kind:'quote', price:'', image_url:''}).price,null);
+  assert.equal(itemInput({...valid, price_kind:'quote', price:123}).price,null);
+  assert.throws(()=>itemInput({...valid,price:null}));
+});
