@@ -1,3 +1,4 @@
+import { ProgressiveProducts } from "./ProgressiveProducts.jsx";
 import { CsvImport } from "./CsvImport.jsx";
 import {
   comparisonKey,
@@ -101,9 +102,7 @@ export function EquipmentPage({
   };
   const [filters, setFilters] = useState(defaults);
   const [quantity, setQuantity] = useState("1");
-  const [visible, setVisible] = useState(24);
   const setFilter = (key, value) => {
-    setVisible(24);
     setFilters((f) => ({
       ...f,
       [key]: value,
@@ -384,8 +383,8 @@ export function EquipmentPage({
           </div>
         </div>
       ) : (
-        <div className="product-grid real-products">
-          {groups.slice(0, visible).map((group) => {
+        <ProgressiveProducts key={domain.id + JSON.stringify(filters)} groups={groups}>
+          {(group) => {
             const item = group.items[0];
             return (
               <article key={item.id} className="real-product">
@@ -435,13 +434,8 @@ export function EquipmentPage({
                 </a>
               </article>
             );
-          })}
-        </div>
-      )}
-      {!selected && groups.length > visible && (
-        <button className="secondary" onClick={() => setVisible((n) => n + 24)}>
-          Show more products ({visible} of {groups.length})
-        </button>
+          }}
+        </ProgressiveProducts>
       )}
       {!selected && !list.length && (
         <p className="empty">
