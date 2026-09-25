@@ -1,0 +1,409 @@
+[
+  {
+    "url": "https://www.pny.com/nvidia-rtx-pro-2000-blackwell",
+    "title": [
+      "NVIDIA RTX PRO 2000 Blackwell",
+      "NVIDIA RTX PRO 2000 Blackwell"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/9f04eab8-06c8-4fbf-831e-b33600bffb83/images/rtx-pro-2000-3qtr-left.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/9f04eab8-06c8-4fbf-831e-b33600bffb83/images/rtx-pro-2000-front.png"
+    ],
+    "memory": [
+      "nt, compact form factor. With 16 GB of ultra-fast GDDR7 memory, this powerhouse accel",
+      "NVIDIA Blackwell Architecture 16 GB GDDR7 with ECC 136 NVIDIA Tensor Cores 34 NVIDIA ",
+      "ce 1 545 AI TOPS 2 GPU Memory 16 GB GDDR7 with ECC Memory Interface 128-bit Memory Ba",
+      "ndwidth 288 GB/sec Maximum Power Consumption 70 W Graphics Bus P",
+      "GPU hardware architecture and 16 GB of ultra-fast GDDR7 memory, accelerate AI-augment",
+      " complex datasets. With up to 96 GB of GPU memory, tackle massive 3D and AI projects,"
+    ],
+    "sku": [
+      "2000 Blackwell SKU: VCNRTXPRO2000B-PB Product Brochure Linecard The NVIDIA RTX PRO\u2122 ",
+      "NY Part Number VCNRTXPRO2000B-PB Architecture NVIDIA Blackwell Architecture Foundry TS"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-pro-4000-blackwell",
+    "title": [
+      "NVIDIA RTX PRO 4000 Blackwell GPU",
+      "NVIDIA RTX 4000 Blackwell Generation"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/dc90291f-6d1f-416d-8c4c-b2a4011f1bcb/images/rtx4000-3qtr-top-left.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/dc90291f-6d1f-416d-8c4c-b2a4011f1bcb/images/1-rtx-pro-4000-blackwell-3qtr-top-left.png"
+    ],
+    "memory": [
+      "NVIDIA Blackwell Architecture 24 GB GDDR7 with ECC NVIDIA RTX PRO SYNC Compatible 4 x",
+      "NVIDIA RT Cores 70 GPU Memory 24 GB GDDR7 with ECC Form Factor 4.4\u201d H x 9.5\u201d L, FHML ",
+      "NVIDIA RT Cores 70 GPU Memory 24 GB GDDR7 with ECC Memory Interface 192-bit Max Power",
+      "nsor Cores, CUDA \u00ae cores, and 24GB of graphics memory to deliver monumental power an",
+      " complex datasets. With up to 96 GB of GPU memory, tackle massive 3D and AI projects,"
+    ],
+    "sku": [
+      " Blackwell GPU SKU: VCNRTXPRO4000B-PB Product Brochure Linecard RTX PRO 4000 + HW SY",
+      "Y Part Numbers VCNRTXPRO4000B-PB VCNRTXPRO4000B-BLK Architecture NVIDIA Blackwell Arch"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-pro-4000-sff-blackwell",
+    "title": [
+      "NVIDIA RTX PRO 4000 Blackwell SFF Edition",
+      "NVIDIA RTX PRO 4000 Blackwell SFF Edition"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/de8264fa-0ea5-487f-bc02-b33600b81a79/images/rtx-pro-4000-sff-3qtr-left-short-bracket.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/de8264fa-0ea5-487f-bc02-b33600b81a79/images/rtx-pro-4000-sff-back-short-bracket.png"
+    ],
+    "memory": [
+      "r Cores, and CUDA\u00ae cores with 24GB of GDDR7 memory for the ultimate performance in a",
+      "NVIDIA Blackwell Architecture 24 GB GDDR7 with ECC 280 Gen 5 Tensor Cores 70 Gen 4 RT",
+      "rmance 1 73 TFLOPS GPU Memory 24 GB GDDR7 with ECC Memory Interface 192-bit Memory Ba",
+      "ndwidth 432 GB/s Maximum Power Consumption 70W Graphics Bus PCI ",
+      " complex datasets. With up to 96 GB of GPU memory, tackle massive 3D and AI projects,"
+    ],
+    "sku": [
+      "ll SFF Edition SKU: VCNRTXPRO4000BLP-PB Product Brochure Linecard The NVIDIA RTX PRO",
+      "Y Part Numbers VCNRTXPRO4000BLP-PB Architecture NVIDIA Blackwell Architecture Foundry "
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-pro-4500-blackwell-workstation-edition",
+    "title": [
+      "NVIDIA RTX PRO 4500 Blackwell Workstation Edition",
+      "NVIDIA RTX PRO 4500 Blackwell Workstation Edition"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/6a00be96-9964-4199-8ebd-b2a401188a3d/images/rtx4500-pro-3qtr-top-left.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/6a00be96-9964-4199-8ebd-b2a401188a3d/images/rtx-pro-4500-blackwell-3qtr-top-left.png"
+    ],
+    "memory": [
+      "ration, neural rendering, and 32GB of ultra-fast memory. Equipped with 5th Gen Tenso",
+      "NVIDIA Blackwell Architecture 32 GB GDDR7 with ECC NVIDIA RTX PRO SYNC Compatible 4 x",
+      "NVIDIA RT Cores 82 GPU Memory 32 GB GDDR7 with ECC Form Factor 4.4\u201d H x 10.5\u201d L, FHFL",
+      "NVIDIA RT Cores 82 GPU Memory 32 GB GDDR7 with ECC Memory Interface 256-bit Memory Ba",
+      "ndwidth 896 GB/s Max Power Consumption 200W Graphics Bus PCI Exp",
+      "ensor, RT, and CUDA cores and 32GB of GDDR7 memory, accelerating creative, engineeri",
+      " complex datasets. With up to 96 GB of GPU memory, tackle massive 3D and AI projects,"
+    ],
+    "sku": [
+      "tation Edition SKU: VCNRTXPRO4500B-PB Product Brochure Linecard RTX PRO 4500 + HW SY",
+      "Y Part Numbers VCNRTXPRO4500B-PB VCNRTXPRO4500B-BLK Architecture NVIDIA Blackwell Arch"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-pro-5000-72gb-blackwell",
+    "title": [
+      "NVIDIA RTX PRO\u2122 5000 72GB Blackwell",
+      "NVIDIA RTX PRO\u2122 5000 72GB Blackwell GPU"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/50b45686-df36-43ae-8ea9-b38400add381/images/rtx5000-pro-front.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/50b45686-df36-43ae-8ea9-b38400add381/images/1-rtx-pro-5000-front.jpg"
+    ],
+    "memory": [
+      " NVIDIA RTX PRO 5000 72GB Blackwell GPU | Professional GPUs | pny.com PNY E",
+      "y 0 Home NVIDIA RTX PRO\u2122 5000 72GB Blackwell NVIDIA RTX PRO\u2122 5000 72GB Blackwell GPU",
+      "with the NVIDIA RTX PRO\u2122 5000 72GB Blackwell. Equipped with the latest NVIDIA archit",
+      "ecture and 72GB of fast GDDR7 memory, this GPU delivers exception",
+      "NVIDIA Blackwell Architecture 72 GB GDDR7 with ECC NVIDIA RTX PRO Sync Compatible 4 x",
+      "VIDIA RT Cores 110 GPU Memory 72 GB GDDR7 with ECC Form Factor 4.4\u201d H x 10.5\u201d L, FHFL",
+      "VIDIA RT Cores 110 GPU Memory 72 GB GDDR7 with ECC Memory Interface 384-bit Memory Ba",
+      "ndwidth 1344 GB/s Max Power Consumption 300W Multi-Instance GPU U",
+      "p to 2x 36GB Up to 1x 72GB Graphics Bus PCI Express 5.0 x16 Display Connecto",
+      "Contains NVIDIA RTX PRO\u2122 5000 72GB Blackwell Professional Graphics Card One (1) Auxi"
+    ],
+    "sku": [
+      " Blackwell GPU SKU: VCNRTXPRO5000B72-PB Product Brochure Linecard Take your professi",
+      "Y Part Numbers VCNRTXPRO5000B-PB VCNRTXPRO5000B-BLK Architecture NVIDIA Blackwell Arch"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-pro-5000-blackwell",
+    "title": [
+      "NVIDIA RTX PRO 5000 Blackwell GPU",
+      "NVIDIA RTX PRO 5000 Blackwell GPU"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/e73bd9df-a2d4-4dbc-8d4c-b2a40108c705/images/1-rtx-pro-5000-front.jpg",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/e73bd9df-a2d4-4dbc-8d4c-b2a40108c705/images/2-rtx-pro-5000-3qtr-back-right.jpg"
+    ],
+    "memory": [
+      "atest NVIDIA architecture and 48GB of fast GDDR7 memory, this GPU delivers exception",
+      "NVIDIA Blackwell Architecture 48 GB GDDR7 with ECC NVIDIA RTX PRO SYNC Compatible 4 x",
+      "VIDIA RT Cores 110 GPU Memory 48 GB GDDR7 with ECC Form Factor 4.4\u201d H x 10.5\u201d L, FHFL",
+      "VIDIA RT Cores 110 GPU Memory 48 GB GDDR7 with ECC Memory Interface 384-bit Memory Ba",
+      "ndwidth 1344 GB/s Max Power Consumption 300W Multi-Instance GPU U",
+      "p to 2x 24GB Up to 1x 48GB Graphics Bus PCI Express 5.0 x16 Display Connecto",
+      " Cores, and CUDA \u00ae cores with 48GB of graphics memory to provide the incredible desk",
+      " complex datasets. With up to 96 GB of GPU memory, tackle massive 3D and AI projects,"
+    ],
+    "sku": [
+      " Blackwell GPU SKU: VCNRTXPRO5000B-PB Product Brochure Linecard RTX PRO 5000 + HW SY",
+      "Y Part Numbers VCNRTXPRO5000B-PB VCNRTXPRO5000B-BLK Architecture NVIDIA Blackwell Arch"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-pro-6000-blackwell-max-q",
+    "title": [
+      "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+      "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/82724a8d-729b-4261-b775-b2a4011beb4f/images/nvidia-rtx-pro-6000-blackwell-max-q-workstation-edition-3qtr-top-left-icons.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/82724a8d-729b-4261-b775-b2a4011beb4f/images/nvidia-rtx-pro-6000-blackwell-max-q-workstation-edition-3qtr-top-left.png"
+    ],
+    "memory": [
+      " for scalable computing. With 96GB of GDDR7 memory, tackle massive datasets, drive c",
+      "NVIDIA Blackwell Architecture 96 GB GDDR7 with ECC NVIDIA RTX PRO SYNC Compatible 4 x",
+      "VIDIA RT Cores 188 GPU Memory 96 GB GDDR7 with ECC Form Factor 4.4\" x 10.5\" FHFL Dual",
+      "VIDIA RT Cores 188 GPU Memory 96 GB GDDR7 with ECC Memory Interface 512-bit Memory Ba",
+      "ndwidth 1792 GB/s Max Power Consumption 300W NVIDIA RTX Power Gui",
+      ") Multi-Instance GPU Up to 4x 24GB Up to 2x 48GB Up to 1x 96GB Graphics Bus PCI Expr",
+      " Cores, and CUDA \u00ae Cores with 96GB of ultra-fast memory to deliver unparalleled perf",
+      " complex datasets. With up to 96 GB of GPU memory, tackle massive 3D and AI projects,"
+    ],
+    "sku": [
+      "tation Edition SKU: VCNRTXPRO6000BQ-PB Product Brochure Linecard RTX PRO 6000 Max-Q ",
+      "Y Part Numbers VCNRTXPRO6000BQ-PB VCNRTXPRO6000BQ-BLK Architecture NVIDIA Blackwell Ar"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-pro-6000-blackwell-ws",
+    "title": [
+      "NVIDIA RTX PRO 6000 Blackwell Workstation Edition",
+      "NVIDIA RTX PRO 6000 Blackwell Workstation Edition"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/ae184391-1330-4ab8-bc60-b2a401150855/images/nvidia-rtx-pro-6000-blackwell-workstation-edition-3qtr-top-left-icons.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/ae184391-1330-4ab8-bc60-b2a401150855/images/nvidia-rtx-pro-6000-blackwell-workstation-edition-3qtr-top-left.png"
+    ],
+    "memory": [
+      "rchitecture and equipped with 96GB of ultra-fast GDDR7 memory, you have unparalleled",
+      "NVIDIA Blackwell Architecture 96 GB GDDR7 with ECC NVIDIA RTX PRO SYNC Compatible 4 x",
+      "VIDIA RT Cores 188 GPU Memory 96 GB GDDR7 with ECC Form Factor 5.4\u201d H x 12\u201d L, XHFL D",
+      "mance 1 380 TFLOPS GPU Memory 96 GB GDDR7 with ECC Memory Interface 512-bit Memory Ba",
+      "ndwidth 1792 GB/s Max Power Consumption 600W Multi-Instance GPU U",
+      "p to 4x 24GB Up to 2x 48GB Up to 1x 96GB Graphics Bus PCI Express 5.0 x16 Di",
+      " complex datasets. With up to 96 GB of GPU memory, tackle massive 3D and AI projects,"
+    ],
+    "sku": [
+      "tation Edition SKU: VCNRTXPRO6000B-PB Product Brochure Linecard RTX PRO 6000 + HW SY",
+      "Y Part Numbers VCNRTXPRO6000B-PB VCNRTXPRO6000B-BLK Architecture NVIDIA Blackwell Arch"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-2000-ada",
+    "title": [
+      "NVIDIA RTX 2000 Ada Generation"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/5b5f8f56-b41e-473e-9f70-b11400b51165/images/pny-nvidia-rtx-2000-ada-top.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/5b5f8f56-b41e-473e-9f70-b11400b51165/images/pny-nvidia-rtx-2000-ada-left-front.png"
+    ],
+    "memory": [
+      " advanced features, and up to 16GB of GPU memory. With its powerful low-profile, dua",
+      "e 1 191.9 TFLOPS 2 GPU Memory 16 GB GDDR6 with ECC Memory Interface 128-bit Memory Ba",
+      "ndwidth 224 GB/sec System Interface PCI Express 4.0 x8 Display C",
+      "ing and AI. RTX 2000 features 16GB of GDDR6 memory, allowing AECO professionals to w",
+      "frames. The RTX 2000 features 16GB of GDDR6 memory, allowing artists to work in real",
+      "rver (vCS) vGPU Profiles from 1 GB to 24 GB --> Warranty 3-Year Limited Warranty Fre",
+      "andwidth of PCIe Gen3 from 15.75GB/sec to 31.5 GB/sec for x8 connections, improving ",
+      " Memory The RTX 2000 features 16GB of GDDR6 memory, providing the memory needed for ",
+      "e 1 191.9 TFLOPS 2 GPU Memory 16 GB GDDR6 with ECC Memory Interface 128-bit Memory Ba",
+      "ndwidth 224 GB/sec Display Connectors 4x Mini DisplayPort 1.4a N"
+    ],
+    "sku": [
+      "Ada Generation SKU: VCNRTX2000ADA-PB Description Certification Request EOL Notificat"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-4000-ada",
+    "title": [
+      "NVIDIA RTX 4000 Ada Generation"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/edb9a422-4b08-4448-ba07-b05800c96110/images/nvidia-rtx-4000-ada-top-left-accessories.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/edb9a422-4b08-4448-ba07-b05800c96110/images/nvidia-rtx-4000-ada-3qtr-left.png"
+    ],
+    "memory": [
+      "s, and CUDA \u00ae cores alongside 20GB of graphics memory, RTX 4000 empowers professiona",
+      "e 1 327.6 TFLOPS 2 GPU Memory 20 GB GDDR6 with ECC Memory Interface 160-bit Memory Ba",
+      "ndwidth 360 GB/s Max Power Consumption 130W Graphics Bus PCI Exp",
+      "andwidth of PCIe Gen3 from 15.75GB/sec to 31.5 GB/sec for x16 connections, improving",
+      "DDR6 Memory RTX 4000 features 20GB of GDDR6 memory, providing the memory needed for ",
+      "igh-performance graphics, and 20GB of GPU memory enable the creation of AR and VR ex",
+      "DDR6 Memory RTX 4000 features 20GB of GDDR6 memory, providing the memory needed for ",
+      "data transfers at rates up to 600 GB/s of bidirectional bandwidth. NVLink bridges are ",
+      "e 1 327.6 TFLOPS 2 GPU Memory 20 GB GDDR6 with ECC Memory Interface 160-bit Memory Ba",
+      "ndwidth 360 GB/s Max Power Consumption 130W Graphics Bus PCI Exp"
+    ],
+    "sku": [
+      "Ada Generation SKU: VCNRTX4000ADA-PB Where to Buy Description Certification Request "
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-4000-sff-ada-generation",
+    "title": [
+      "NVIDIA RTX 4000 SFF Ada Generation",
+      "Powering Performance in a Compact Package"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/2ba40fec-d14e-4fd4-8467-afcc00d76eb6/images/nvidia-rtx-4000-sff-3qtr-left.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/2ba40fec-d14e-4fd4-8467-afcc00d76eb6/images/nvidia-rtx-4000-sff-front.png"
+    ],
+    "memory": [
+      "DIA Ada Lovelace Architecture 20 GB GDDR6 with ECC 192 Gen 4 Tensor Cores 48 Gen 3 RT",
+      "ance 1 44.3 TFLOPS GPU Memory 20 GB GDDR6 ECC Memory Interface 160-bit Memory Bandwid",
+      "th 320 GB/s Display Connectors mDP 1.4a (4) Form Factor 2.7",
+      "nd next-gen CUDA \u00ae cores with 20GB of graphics memory for excellent rendering, AI, g",
+      "can operate more efficiently. 20GB of GPU Memory With 20GB GDDR6 memory, RTX 4000 SF"
+    ],
+    "sku": [
+      "Ada Generation SKU: VCNRTX4000ADALP-PB Product Brochure Linecard Where to Buy The NV",
+      "NY Part Number VCNRTX4000ADALP-PB Architecture NVIDIA Ada Lovelace Architecture Proces"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-4500-ada",
+    "title": [
+      "NVIDIA RTX 4500 Ada Generation"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/2e1a48ed-8429-4a5b-8117-b05800cc44e0/images/nvidia-rtx-4500-ada-top-left-accessories.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/2e1a48ed-8429-4a5b-8117-b05800cc44e0/images/nvidia-rtx-4500-ada-3qtr-left.png"
+    ],
+    "memory": [
+      ", and 7,680 CUDA \u00ae cores with 24GB of graphics memory to deliver fast ray tracing an",
+      "e 1 637.8 TFLOPS 2 GPU Memory 24 GB GDDR6 with ECC Memory Interface 192-bit Memory Ba",
+      "ndwidth 432 GB/s Max Power Consumption 210W Graphics Bus PCI Exp",
+      "andwidth of PCIe Gen3 from 15.75GB/s to 31.5GB/s for x16 connections, improving data",
+      " GPU Memory RTX 4500 features 24GB of GDDR6 memory, providing the memory needed for ",
+      "igh-performance graphics, and 20GB of GPU memory enable the creation of AR and VR ex",
+      "DDR6 Memory RTX 4000 features 20GB of GDDR6 memory, providing the memory needed for ",
+      "data transfers at rates up to 600 GB/s of bidirectional bandwidth. NVLink bridges are ",
+      "e 1 637.8 TFLOPS 2 GPU Memory 24 GB GDDR6 with ECC Memory Interface 192-bit Memory Ba",
+      "ndwidth 432 GB/s Max Power Consumption 210W Graphics Bus PCI Exp"
+    ],
+    "sku": [
+      "Ada Generation SKU: VCNRTX4500ADA-PB Where to Buy Description Certification Request "
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-5000-ada",
+    "title": [
+      "NVIDIA RTX 5000 Ada Generation"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/954d5ff2-29f0-48e9-9c37-b05800c792ee/images/nvidia-rtx-5000-ada-top-left-accessories.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/954d5ff2-29f0-48e9-9c37-b05800c792ee/images/nvidia-rtx-5000-ada-3qtr-left.png"
+    ],
+    "memory": [
+      " and 12,800 CUDA \u00ae cores with 32GB of graphics memory to accelerate rendering, AI, g",
+      " 1 1044.4 TFLOPS 2 GPU Memory 32 GB GDDR6 with ECC Memory Interface 256-bit Memory Ba",
+      "ndwidth 576 GB/s Max Power Consumption 250W Graphics Bus PCI Exp",
+      "WS) 3 vGPU Profiles Supported 1 GB, 2 GB, 3 GB, 4 GB, 6 GB, 8 GB, 12 GB, 16 GB, 24 G",
+      "andwidth of PCIe Gen3 from 15.75GB/s to 31.5GB/s for x16 connections, improving data",
+      " GPU Memory RTX 5000 features 32GB of GDDR6 memory, providing the memory needed for ",
+      "rformance graphics, and large 32GB of GPU memory enables the creation of incredible ",
+      "DDR6 Memory RTX 4000 features 20GB of GDDR6 memory, providing the memory needed for ",
+      "data transfers at rates up to 600 GB/s of bidirectional bandwidth. NVLink bridges are ",
+      " 1 1044.4 TFLOPS 2 GPU Memory 32 GB GDDR6 with ECC Memory Interface 256-bit Memory Ba"
+    ],
+    "sku": [
+      "Ada Generation SKU: VCNRTX5000ADA-PB Where to Buy Description Certification Request "
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.pny.com/nvidia-rtx-6000-ada",
+    "title": [
+      "NVIDIA RTX 6000 Ada Generation",
+      "NVIDIA RTX 6000 Ada Generation"
+    ],
+    "images": [
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/786342ec-d6fe-4d2b-9baf-af1600c0648e/images/nvidia-rtx-6000-ada-3qtr-back-left-icons.png",
+      "https://d2vfia6k6wrouk.cloudfront.net/productimages/786342ec-d6fe-4d2b-9baf-af1600c0648e/images/nvidia-rtx-6000-3qtr-top-left.png"
+    ],
+    "memory": [
+      "ores, 18176 CUDA \u00ae cores, and 48GB of memory. With unparalleled speed in rendering, ",
+      "DIA Ada Lovelace Architecture 48 GB GDDR6 with ECC 568 Gen 4 Tensor Cores 142 Gen 3 R",
+      " 1 1457.0 TFLOPS 2 GPU Memory 48 GB GDDR6 with ECC Memory Interface 384-bit Memory Ba",
+      "ndwidth 960 GB/s Max Power Consumption 300W NVIDIA RTX Power Gui",
+      "(vWS) vGPU Profiles Supported 1 GB, 2 GB, 3 GB, 4 GB, 6 GB, 8 GB, 12 GB, 16 GB, 24 G",
+      "B, 48 GB NVIDIA \u00ae 3D Vision \u00ae and 3D Vision Pro Support Vi",
+      " RTX-powered AI workstations. 48GB of GPU Memory With 48GB GDDR6 memory, RTX 6000 gi"
+    ],
+    "sku": [
+      "Ada Generation SKU: VCNRTX6000ADA-PB Product Brochure Linecard The NVIDIA RTX\u2122 6000 ",
+      "NY Part Number VCNRTX6000ADA-PB Foundry TSMC Process Size 4 nm NVIDIA Custom Process T"
+    ],
+    "verified": true
+  },
+  {
+    "url": "https://www.dell.com/en-us/shop/desktop-computers/spd/dellpromaxwithgb10fcm1253",
+    "verified": false,
+    "error": "HTTP Error 403: Forbidden"
+  },
+  {
+    "url": "https://store.acer.com/en-us/veriton-ai-mini-workstation-vgn100-ud13",
+    "verified": false,
+    "error": "[Errno 60] Operation timed out"
+  },
+  {
+    "url": "https://store.minisforum.com/products/minisforum-ms-s1-max-mini-pc",
+    "title": [
+      "MINISFORUM MS-S1 MAX 128GB Max AI Compute Edition"
+    ],
+    "images": [
+      "http://store.minisforum.com/cdn/shop/files/Compressed_MS-S1_Max.png?v=1784442536"
+    ],
+    "memory": [
+      "ok Email MINISFORUM MS-S1 MAX 128GB Max AI Compute Edition Sale price $3,799.00 Regul",
+      "TOPS LPDDR5x-8000MT/s | Up To 128GB USB4 V2 & Dual 10GbE & WIFI 7 PCIE x16 Expansion ",
+      "k Model: MINISFORUM MS-S1 MAX 128GB Max AI Compute Edition MINISFORUM MS-S1 MAX 128GB",
+      " Edition MINISFORUM MS-S1 MAX 64GB Local AI Pilot Edition CPU: AMD Ryzen\u2122 AI Max+ 39",
+      " AMD Ryzen\u2122 AI Max+ 395 Type: 128GB RAM + 2TB SSD 128GB RAM + 2TB SSD 20% off $3,799.",
+      "00 $4,749.00 128GB RAM + 4TB SSD | Estimated shipping time: Early Oc",
+      "ied Memory Architecture Up to 128GB LPDDR5x-8000MT/s Eliminates VRAM Bottlenecks, Low",
+      " and audio production through 128GB UMA memory and multi-display output. Ultimate Com",
+      "al generation. Supports up to 128GB LPDDR5x-8000MT/s quad-channel memory, eliminating",
+      "pSeek-R1 671B Q4 large model (380GB, Q4_0 quantization), marking a breakthrough in lo"
+    ],
+    "sku": [],
+    "verified": true
+  },
+  {
+    "url": "https://www.seeedstudio.com/reComputer-Mini-J4012-p-6355.html",
+    "title": [
+      "reComputer Mini J4012 - Intelligent Edge AI Computer with NVIDIA\u00ae Jetson\u2122 Orin\u2122 NX 16GB"
+    ],
+    "images": [
+      "https://media-cdn.seeedstudio.com/media/catalog/product/cache/7f7f32ef807b8c2c2215b49801c56084/1/-/1-recomputer-mini-j3040-_without-expansion-board_.jpg"
+    ],
+    "memory": [
+      "with NVIDIA\u00ae Jetson\u2122 Orin\u2122 NX 16GB getViewFileUrl('fonts/Blank-Theme-Icons/Blank-The",
+      "with NVIDIA\u00ae Jetson\u2122 Orin\u2122 NX 16GB SKU 102111001 Rating: 90 % of 100 1 Review Add Yo",
+      "ed by NVIDIA\u00ae Jetson Orin\u2122 NX 16GB module,delivering up to 100 TOPS AI performance. ",
+      "ssor Orin Nano Orin NX Memory 8GB 16GB Extension Board without with Selection Guide"
+    ],
+    "sku": [],
+    "verified": true
+  },
+  {
+    "url": "https://www.hp.com/us-en/shop/pdp/hp-z2-mini-g1a-workstation-desktop-pc-customizable-a74x0av-mb",
+    "verified": false,
+    "error": "The read operation timed out"
+  }
+]
