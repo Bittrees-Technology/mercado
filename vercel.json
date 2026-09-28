@@ -3,6 +3,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/api/seo?path=/"
+    },
+    {
       "source": "/sitemap.xml",
       "destination": "/api/seo?path=/sitemap.xml"
     },
