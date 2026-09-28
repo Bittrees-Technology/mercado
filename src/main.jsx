@@ -1,3 +1,4 @@
+import { pageMeta } from "../lib/seo.mjs";
 import {ProfileImage} from "./ImageUpload.jsx";
 import { useAppearance } from "./useAppearance.jsx";
 import { useAccountNavigation } from "./useAccountNavigation.jsx";
@@ -397,20 +398,19 @@ function App() {
     }
   }, [user, pendingQuote]);
   useEffect(() => {
-    if (!isEquipment) return;
-    const parts = location.pathname.split("/");
-    const domain = products.find((p) => p.id === parts[2]);
-    const item = items.find((p) => p.id === parts[3]);
-    if (domain) {
-      document.title = (item?.name || domain.name) + " | Mercado";
-      document
-        .querySelector('link[rel="canonical"]')
-        ?.setAttribute(
-          "href",
-          "https://mercado.bittrees.org" + location.pathname,
-        );
+    if (loading) return;
+    const meta = pageMeta(location.pathname, products, items, new URLSearchParams(location.search).has("preview"));
+    document.title = meta.title;
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href',meta.canonical);
+    for (const [key,value] of Object.entries({description:meta.description,robots:meta.noindex?'noindex, nofollow':'index, follow, max-image-preview:large','og:title':meta.title,'og:description':meta.description,'og:url':meta.canonical,'og:image':meta.image,'twitter:title':meta.title,'twitter:description':meta.description,'twitter:image':meta.image,'twitter:card':'summary_large_image'})) {
+      const attribute=key.startsWith('og:')?'property':'name';
+      let tag=document.head.querySelector(`meta[${attribute}="${key}"]`);
+      if(!tag){tag=document.createElement('meta');tag.setAttribute(attribute,key);document.head.appendChild(tag);}
+      tag.setAttribute('content',value);
     }
-  }, [items, products]);
+    let schema=document.getElementById('seo-schema');
+    if(meta.schema){if(!schema){schema=document.createElement('script');schema.id='seo-schema';schema.type='application/ld+json';document.head.appendChild(schema);}schema.textContent=JSON.stringify(meta.schema);}else schema?.remove();
+  }, [route, items, products, loading]);
   const featured = products.find((p) => p.id === "bitaxe");
   const shown = products.filter(
     (p) =>

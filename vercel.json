@@ -3,12 +3,16 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/seo?path=/sitemap.xml"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/index"
     },
     {
-      "source": "/((?!assets/|products/|appearance.js|favicon.svg|product-import-template.csv|robots.txt|sitemap.xml).*)",
-      "destination": "/index.html"
+      "source": "/:path((?!api/|assets/|products/|social/|appearance.js|favicon|apple-touch-icon.png|product-import-template.csv|robots.txt).*)",
+      "destination": "/api/seo?path=/:path"
     }
   ],
   "headers": [
@@ -100,6 +104,10 @@
   "functions": {
     "api/index.mjs": {
       "maxDuration": 60
+    },
+    "api/seo.mjs": {
+      "includeFiles": "dist/index.html",
+      "maxDuration": 30
     }
   }
 }
