@@ -2,7 +2,7 @@
 
 ## Findings and changes
 
-- Every initial HTML response had a generic title and home canonical. Public pages now deliver route-specific title, description, canonical, Open Graph and Twitter card metadata before JavaScript runs. SPA navigation updates the same metadata.
+- Every initial HTML response had a generic title and home canonical. The homepage is prerendered during the build; other public pages render from current catalog data. Public pages now deliver route-specific title, description, canonical, Open Graph and Twitter card metadata before JavaScript runs. SPA navigation updates the same metadata.
 - The initial application root was empty. Public responses now include a readable product/collection heading, description and crawlable catalog links before React loads.
 - The static sitemap could retain hidden products and miss new vendor listings. `/sitemap.xml` now reads active, non-deleted listings and active collections, with product update dates. Referral and preview parameters are omitted.
 - Missing products previously returned a successful shell. They now return HTTP 404 and noindex; account/admin and preview URLs are noindex. Data failures return 503, not a misleading 404.

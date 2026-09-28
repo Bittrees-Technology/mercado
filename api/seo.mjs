@@ -20,7 +20,7 @@ export default async function handler(req,res) {
   if(path==='/sitemap.xml') {res.setHeader('Content-Type','application/xml; charset=utf-8');return res.status(200).send(sitemap(products,items));}
   const meta=pageMeta(path,products,items,url.searchParams.has('preview'));
   if(meta.noindex)res.setHeader('X-Robots-Tag','noindex, nofollow');
-  const html=template.replace(/<title>[\s\S]*?<\/title>/,'').replace(/<meta\s+name="description"[\s\S]*?>/,'').replace(/<link rel="canonical"[^>]*>/,'').replace('<!-- SEO -->',headTags(meta)).replace('<div id="root"></div>',`<div id="root">${privatePage?'':initialContent(meta,products,items)}</div>`);
+  const html=template.replace(/<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/,'<!-- SEO -->').replace(/<title>[\s\S]*?<\/title>/,'').replace(/<meta\s+name="description"[\s\S]*?>/,'').replace(/<link rel="canonical"[^>]*>/,'').replace('<!-- SEO -->',headTags(meta)).replace(/<div id="root">[\s\S]*?<\/div>/,`<div id="root">${privatePage?'':initialContent(meta,products,items)}</div>`);
   res.setHeader('Content-Type','text/html; charset=utf-8');
   return res.status(meta.status).send(html);
  }catch(error){
