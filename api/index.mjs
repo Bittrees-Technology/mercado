@@ -1,3 +1,4 @@
+import {sharedMercadoRoles} from '../lib/shared-roles.mjs';
 import { coordinatorGrant, coordinatorRequest } from "../lib/coordinator.mjs";
 import { visibilityInput } from "../lib/product-visibility.mjs";
 import {handleRoleFeed} from '../lib/roles-feed.mjs';
@@ -77,10 +78,12 @@ async function user(req) {
   const wallet = /^0x[a-f0-9]{40}$/.test(s.identity)
     ? s.identity
     : link?.wallet;
-  const governance = await resolveGovernance(wallet);
-  const recoveryOwner = isAdmin(s.identity),
+  const shared=await sharedMercadoRoles(s.identity,link);
+  const governance = shared.enrolled ? {role:null,status:shared.authoritative?'roles-authoritative':shared.unavailable?'roles-unavailable':'roles-inactive'} : await resolveGovernance(wallet);
+  const recoveryOwner = shared.enrolled ? shared.actions.includes('role.owner') : isAdmin(s.identity),
     owner = recoveryOwner || governance.role === "owner";
-  const role = owner
+  const staffRole=localRoles.find(role=>role!=='vendor'&&shared.actions.includes('role.'+role.replaceAll('_','-')));
+  const role = shared.enrolled ? (owner?'owner':shared.actions.includes('role.admin')?'admin':staffRole||(r?.role==='vendor'?'vendor':'customer')) : owner
     ? "owner"
     : governance.role === "admin"
       ? "admin"
@@ -97,8 +100,9 @@ async function user(req) {
 
     linkedWallet: link?.wallet || null,
     linkedEmail: link?.email || null,
+    sharedAccess:shared,
     governanceStatus: governance.status,
-    roleSource: recoveryOwner
+    roleSource: shared.enrolled?(role==='vendor'||role==='customer'?'private-owner':'roles'):recoveryOwner
       ? "protected_owner"
       : governance.role
         ? "governance"
@@ -185,6 +189,8 @@ export default async function handler(req, res) {
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
       return res.status(200).end(Buffer.from(m.data, "base64"));
     }
+ if(route==='shared-roles-health'&&req.method==='GET')return json(res,200,{protocol:'bittrees-roles-ecosystem-v1',project:'mercado',configured:!!process.env.ROLES_ECOSYSTEM_REQUEST_PRIVATE_KEY&&!!process.env.ROLES_ECOSYSTEM_DECISION_PUBLIC_KEY});
+
     if (route === "health" && req.method === "GET") {
       await sql()`SELECT 1 FROM marcada.products LIMIT 1`;
       return json(res, 200, { ok: true });
@@ -888,6 +894,7 @@ export default async function handler(req, res) {
     }
     if (route === "admin/role" && req.method === "POST") {
       const identity = normalizeIdentity(body.identity);
+      if(u.sharedAccess?.enrolled&&body.role!=='vendor'&&!(body.role==='customer'&&(await sql()`SELECT role FROM marcada.roles WHERE identity=${identity}`)[0]?.role==='vendor'))return json(res,409,{error:'Manage shared staff roles at https://roles.bittrees.org. Vendor ownership remains in Mercado.'});
       if (isAdmin(identity))
         return json(res, 400, { error: "Owner access is protected" });
       if (![...localRoles, "customer"].includes(body.role))
