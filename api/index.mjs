@@ -174,7 +174,7 @@ export default async function handler(req, res) {
     )
       return json(res, 413, { error: "Request too large" });
     if (route.startsWith("integrations/coordinator/") && req.method === "POST") {
-      const grant = coordinatorGrant(req.headers.authorization, JSON.parse(process.env.MERCADO_COORDINATOR_GRANTS_JSON || "[]"));
+      const grant = coordinatorGrant(req.headers.authorization, [...JSON.parse(process.env.MERCADO_COORDINATOR_GRANTS_JSON || "[]"), ...JSON.parse(process.env.MERCADO_QUALIFIED_GRANTS_JSON || "[]")]);
       await limited(req, "coordinator:" + grant.identity, 40);
       return json(res, 200, await coordinatorRequest(sql(), grant, route.split("/").pop(), body));
     }
@@ -820,13 +820,15 @@ export default async function handler(req, res) {
         !["reviewed", "changes_requested"].includes(body.status)
       )
         return json(res, 400, { error: "Invalid review" });
+      const expectedStatus = body.expected_status || "submitted";
+      if (!["submitted", "reviewed", "changes_requested"].includes(expectedStatus)) return json(res, 400, {error:"Invalid current review status"});
       const note = String(body.note || "").slice(0, 2000);
       if (body.status === "changes_requested" && !note.trim())
         return json(res, 400, {
           error: "Explain what the vendor needs to change.",
         });
       const saved =
-        await sql()`UPDATE marcada.product_submissions SET status=${body.status},review_note=${note},updated_at=now() WHERE id=${body.id} AND revision=${body.revision} AND status='submitted' RETURNING id`;
+        await sql()`UPDATE marcada.product_submissions SET status=${body.status},review_note=${note},updated_at=now() WHERE id=${body.id} AND revision=${body.revision} AND status=${expectedStatus} RETURNING id`;
       if (!saved.length)
         return json(res, 409, {
           error: "Submission changed. Reload before reviewing.",
