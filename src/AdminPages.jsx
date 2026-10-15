@@ -321,11 +321,9 @@ export function AdminPages({
                 <section className="roles">
                   <h3>Team access</h3>
                   <p>
-                    Owner and administrator access follows Bittrees governance.
-                    Assign a focused local role below. Removing a role takes
-                    effect on the next request; governance access remains
-                    managed in governance.
+                    Shared staff roles and BGOV eligibility are managed in Roles. Vendor ownership and private offers remain in Mercado.
                   </p>
+                  <p><a href="https://roles.bittrees.org">Manage shared roles</a></p>
                   <form
                     className="team-access-form"
                     onSubmit={(e) => {
