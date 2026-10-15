@@ -1,3 +1,4 @@
+import { coordinatorGrant, coordinatorRequest } from "../lib/coordinator.mjs";
 import { visibilityInput } from "../lib/product-visibility.mjs";
 import {handleRoleFeed} from '../lib/roles-feed.mjs';
 import { prepareImage, publishImage } from "../lib/ipfs.mjs";
@@ -168,6 +169,11 @@ export default async function handler(req, res) {
       (["admin/image", "images"].includes(route) ? 1500000 : 16000)
     )
       return json(res, 413, { error: "Request too large" });
+    if (route.startsWith("integrations/coordinator/") && req.method === "POST") {
+      const grant = coordinatorGrant(req.headers.authorization, JSON.parse(process.env.MERCADO_COORDINATOR_GRANTS_JSON || "[]"));
+      await limited(req, "coordinator:" + grant.identity, 40);
+      return json(res, 200, await coordinatorRequest(sql(), grant, route.split("/").pop(), body));
+    }
     if (route === "image" && req.method === "GET") {
       const id = url.searchParams.get("id");
       if (!uuid(id)) return json(res, 400, { error: "Invalid image" });
