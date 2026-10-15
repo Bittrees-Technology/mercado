@@ -323,7 +323,7 @@ export function AdminPages({
                   <p>
                     Shared staff roles and BGOV eligibility are managed in Roles. Vendor ownership and private offers remain in Mercado.
                   </p>
-                  <p><a href="https://roles.bittrees.org">Manage shared roles</a></p>
+                  <p><a href="https://roles.bittrees.org/role-management?project=mercado">Manage roles</a></p>
                   <form
                     className="team-access-form"
                     onSubmit={(e) => {
