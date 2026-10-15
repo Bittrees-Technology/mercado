@@ -1,3 +1,4 @@
+import {createSsoClient,nodeRequest,nodeResponse,suppressSso} from '../shared/sso/client.mjs';
 import {sharedMercadoRoles} from '../lib/shared-roles.mjs';
 import { coordinatorGrant, coordinatorRequest } from "../lib/coordinator.mjs";
 import { visibilityInput } from "../lib/product-visibility.mjs";
@@ -191,6 +192,13 @@ export default async function handler(req, res) {
     }
  if(route==='shared-roles-health'&&req.method==='GET')return json(res,200,{protocol:'bittrees-roles-ecosystem-v1',project:'mercado',configured:!!process.env.ROLES_ECOSYSTEM_REQUEST_PRIVATE_KEY&&!!process.env.ROLES_ECOSYSTEM_DECISION_PUBLIC_KEY});
 
+ if(route.startsWith('sso/')){
+ const env=process.env,appOrigin=origin();
+ const client=createSsoClient({clientId:'mercado',origin:appOrigin,issuer:env.BITTREES_SSO_ISSUER||'https://roles.bittrees.org',secret:env.BITTREES_SSO_CLIENT_SECRET,enabled:env.BITTREES_SSO_ENABLED==='1',adapter:{
+ async current(){const key=cookie(req,'__Host-mercado');if(!key)return null;const [s]=await sql()`SELECT identity,expires_at FROM marcada.sessions WHERE hash=${hash(key)} AND expires_at>now()`;return s?{key,identity:s.identity,authTime:new Date(s.expires_at).getTime()-604800000}:null;},
+ async establish(identity,authTime){const key=token(),age=Math.max(0,Math.floor((authTime+604800000-Date.now())/1000));await sql()`INSERT INTO marcada.users(identity,referral) VALUES(${identity},${token().slice(0,16)}) ON CONFLICT(identity) DO NOTHING`;await sql()`INSERT INTO marcada.sessions(hash,identity,expires_at) VALUES(${hash(key)},${identity},to_timestamp(${(authTime+604800000)/1000}))`;return {key,cookies:[`__Host-mercado=${key}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${age}`]};}
+ }});return nodeResponse(await client(await nodeRequest(req,appOrigin)),res);
+ }
     if (route === "health" && req.method === "GET") {
       await sql()`SELECT 1 FROM marcada.products LIMIT 1`;
       return json(res, 200, { ok: true });
@@ -346,7 +354,7 @@ export default async function handler(req, res) {
     }
     if (route === "auth/logout" && req.method === "POST") {
       await sql()`DELETE FROM marcada.sessions WHERE hash=${hash(cookie(req, "__Host-mercado"))}`;
-      setCookie(res, "__Host-mercado", "", 0);
+      setCookie(res, "__Host-mercado", "", 0);suppressSso(res,origin());
       return json(res, 200, { ok: true });
     }
     const u = await user(req);
