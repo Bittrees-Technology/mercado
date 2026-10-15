@@ -273,7 +273,7 @@ export function ProductSubmissions({
                 >
                   Open in product editor
                 </a>
-                {s.status === "submitted" && (
+                {["submitted", "reviewed", "changes_requested"].includes(s.status) && (
                   <form
                     className="admin-form"
                     onSubmit={(e) => {
@@ -283,6 +283,7 @@ export function ProductSubmissions({
                         await api("admin/product-submission-review", {
                           id: s.id,
                           revision: s.revision,
+                          expected_status: s.status,
                           status: f.get("status"),
                           note: f.get("note"),
                         });
@@ -295,7 +296,7 @@ export function ProductSubmissions({
                   >
                     <label>
                       Review result
-                      <select name="status">
+                      <select name="status" defaultValue={s.status === "submitted" ? "changes_requested" : s.status}>
                         <option value="changes_requested">
                           Request changes
                         </option>
