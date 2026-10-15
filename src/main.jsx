@@ -1,3 +1,5 @@
+import {useSharedSignIn} from "../shared/sso/useSharedSignIn.jsx";
+import { LoginPanel } from "./shared/login/LoginPanel.jsx";
 import { pageMeta } from "../lib/seo.mjs";
 import {ProfileImage} from "./ImageUpload.jsx";
 import { useAppearance } from "./useAppearance.jsx";
@@ -189,6 +191,7 @@ function App() {
       if (request === accountRequest.current) setAccountLoading(false);
     }
   }
+useSharedSignIn(user?.identity);
   async function refresh() {
     await Promise.all([
       api("catalog").then((c) => {
@@ -784,15 +787,7 @@ function App() {
                 {notice}
               </p>
             )}
-            {modal === "login" && (
-              <>
-                <div className="eyebrow">WELCOME TO MERCADO</div>
-                <h2>Sign in to Mercado.</h2>
-                <p>
-                  Sign in to request quotes, create referral links and access
-                  deals shared with you.
-                </p>
-                <form
+            {modal === "login" && <LoginPanel product="Mercado" email={<form
                   onSubmit={(e) => {
                     e.preventDefault();
                     run(async () => {
@@ -826,7 +821,7 @@ function App() {
                   </label>
                   {challenge && (
                     <label>
-                      8-digit verification code
+                      Verification code
                       <input
                         name="code"
                         pattern="[0-9]{8}"
@@ -841,15 +836,11 @@ function App() {
                     {busy
                       ? "Please wait…"
                       : challenge
-                        ? "Verify & sign in"
-                        : "Email me a code"}{" "}
+                        ? "Verify and continue"
+                        : "Send verification code"}{" "}
                     <Mail size={17} />
                   </button>
-                </form>
-                <div className="divider">or use your wallet</div>
-                <WalletPicker busy={busy} onChoose={wallet} />
-              </>
-            )}
+                </form>} wallet={<WalletPicker busy={busy} onChoose={wallet}/>} footer={<p>Sign in to request quotes, create referral links and access deals shared with you.</p>}/>}
             {modal === "link-wallet" && user?.identity.includes("@") && (
               <>
                 <h2>Link your wallet</h2>
