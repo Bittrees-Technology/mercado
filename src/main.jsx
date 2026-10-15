@@ -1,5 +1,5 @@
 import {useSharedSignIn} from "../shared/sso/useSharedSignIn.jsx";
-import { LoginPanel } from "./shared/login/LoginPanel.jsx";
+import { LoginPanel, EmailSignIn, EthereumSignIn } from "./shared/login/LoginPanel.jsx";
 import { pageMeta } from "../lib/seo.mjs";
 import {ProfileImage} from "./ImageUpload.jsx";
 import { useAppearance } from "./useAppearance.jsx";
@@ -761,7 +761,7 @@ useSharedSignIn(user?.identity);
           }}
         >
           <section
-            className={"modal " + (modal === "admin" ? "wide" : "")}
+            className={"modal " + (modal === "admin" ? "wide" : modal === "login" ? "bt-login-host" : "")}
             role="dialog"
             aria-modal="true"
             aria-label={modal === "referrals" ? "Share Mercado" : "Mercado account and equipment"}
@@ -787,60 +787,8 @@ useSharedSignIn(user?.identity);
                 {notice}
               </p>
             )}
-            {modal === "login" && <LoginPanel product="Mercado" email={<form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    run(async () => {
-                      if (challenge) {
-                        await api("auth/verify-email", {
-                          challenge,
-                          code: new FormData(e.target).get("code"),
-                        });
-                        await refresh();
-                        close();
-                      } else {
-                        const r = await api("auth/email", { email });
-                        setChallenge(r.challenge);
-                        setNotice(r.message);
-                      }
-                    });
-                  }}
-                >
-                  <label>
-                    Email address
-                    <input
-                      required
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        setChallenge("");
-                      }}
-                      autoComplete="email"
-                    />
-                  </label>
-                  {challenge && (
-                    <label>
-                      Verification code
-                      <input
-                        name="code"
-                        pattern="[0-9]{8}"
-                        maxLength={8}
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        required
-                      />
-                    </label>
-                  )}
-                  <button disabled={busy} className="primary">
-                    {busy
-                      ? "Please wait…"
-                      : challenge
-                        ? "Verify and continue"
-                        : "Send verification code"}{" "}
-                    <Mail size={17} />
-                  </button>
-                </form>} wallet={<WalletPicker busy={busy} onChoose={wallet}/>} footer={<p>Sign in to request quotes, create referral links and access deals shared with you.</p>}/>}
+            {modal === "login" && <LoginPanel product="Mercado" email={<EmailSignIn email={email} onEmailChange={setEmail} challenge={challenge} busy={busy} onReset={()=>setChallenge('')} onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);run(async()=>{if(challenge){await api('auth/verify-email',{challenge,code:f.get('code')});await refresh();close();}else{const r=await api('auth/email',{email});setChallenge(r.challenge);setNotice(r.message);}});}}/>} wallet={<EthereumSignIn busy={busy} onClick={()=>open('login-wallet')}/>} footer={<p>Sign in to request quotes, create referral links and access deals shared with you.</p>}/>}
+            {modal === 'login-wallet' && <><h2>Choose your Ethereum wallet</h2><WalletPicker busy={busy} onChoose={wallet}/><button type="button" onClick={()=>open('login')}>Back to sign in</button></>}
             {modal === "link-wallet" && user?.identity.includes("@") && (
               <>
                 <h2>Link your wallet</h2>
