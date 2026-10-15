@@ -1,3 +1,4 @@
+import {SharedProfileCard} from "../shared/sso/SharedProfileCard.jsx";
 import {useSharedSignIn} from "../shared/sso/useSharedSignIn.jsx";
 import { LoginPanel, EmailSignIn, EthereumSignIn } from "./shared/login/LoginPanel.jsx";
 import { pageMeta } from "../lib/seo.mjs";
@@ -456,7 +457,7 @@ useSharedSignIn(user?.identity);
       </div>
       </header>
       {themeError && <p className="appearance-error" role="alert">{themeError}</p>}
-      <main>
+      <main><SharedProfileCard sessionRevision={user?.identity}/>
         {accountLoading && !user && (location.pathname.startsWith("/admin") || location.pathname.startsWith("/account/notifications")) ? (
           <section className="equipment-page" role="status">Loading your workspace…</section>
         ) : location.pathname.startsWith("/account/notifications") ? (
