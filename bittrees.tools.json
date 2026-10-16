@@ -1,0 +1,25 @@
+{
+  "schema": "bittrees.app-tools.v1",
+  "version": 1,
+  "projectId": "mercado",
+  "canonicalDiscovery": "https://mcp.bittrees.org/mcp",
+  "connections": [
+    {
+      "projectId": "mercado",
+      "transport": "managed-mcp",
+      "endpoint": "https://mcp.bittrees.org/mcp",
+      "verification": "source-inspected",
+      "source": "https://github.com/Bittrees-Technology/mcp/blob/a19ce2a/src/service/source-connections.mjs",
+      "operations": {
+        "prepare": [
+          "source_mercado_preview",
+          "source_mercado_status"
+        ],
+        "complete": [
+          "source_mercado_execute"
+        ]
+      },
+      "boundary": "Requires an existing owner-bound managed source connection, selected project and current source authority. Preview/status do not approve or publish. Never pass source tokens through tool arguments. Execution additionally requires the existing managed sources:execute grant and current source policy; exceptions remain held."
+    }
+  ]
+}
