@@ -1,5 +1,5 @@
 import {createSsoClient,nodeRequest,nodeResponse,suppressSso} from '../shared/sso/client.mjs';
-import {sharedMercadoRoles} from '../lib/shared-roles.mjs';
+import {sharedMercadoRoles,effectiveMercadoRole} from '../lib/shared-roles.mjs';
 import { coordinatorGrant, coordinatorRequest } from "../lib/coordinator.mjs";
 import { visibilityInput } from "../lib/product-visibility.mjs";
 import {handleRoleFeed} from '../lib/roles-feed.mjs';
@@ -22,7 +22,6 @@ import {
   retryNotifications,
 } from "../lib/notifications.mjs";
 import { localRoles, permissions } from "../lib/permissions.mjs";
-import { resolveGovernance } from "../lib/governance.mjs";
 import { itemInput, imageUpload } from "../lib/catalog.mjs";
 import { neon } from "@neondatabase/serverless";
 import { randomUUID, randomInt } from "node:crypto";
@@ -76,21 +75,9 @@ async function user(req) {
   };
   const r = { role: record.role },
     link = { email: record.email, wallet: record.wallet };
-  const wallet = /^0x[a-f0-9]{40}$/.test(s.identity)
-    ? s.identity
-    : link?.wallet;
   const shared=await sharedMercadoRoles(s.identity,link);
-  const governance = shared.enrolled ? {role:null,status:shared.authoritative?'roles-authoritative':shared.unavailable?'roles-unavailable':'roles-inactive'} : await resolveGovernance(wallet);
-  const recoveryOwner = shared.enrolled ? shared.actions.includes('role.owner') : isAdmin(s.identity),
-    owner = recoveryOwner || governance.role === "owner";
-  const staffRole=localRoles.find(role=>role!=='vendor'&&shared.actions.includes('role.'+role.replaceAll('_','-')));
-  const role = shared.enrolled ? (owner?'owner':shared.actions.includes('role.admin')?'admin':staffRole||(r?.role==='vendor'?'vendor':'customer')) : owner
-    ? "owner"
-    : governance.role === "admin"
-      ? "admin"
-      : localRoles.includes(r?.role)
-        ? r.role
-        : "customer";
+  const role=effectiveMercadoRole(shared,r?.role),owner=role==='owner';
+  const governance={status:shared.authoritative?'roles-authoritative':shared.unavailable?'roles-unavailable':'roles-inactive'};
   const [vendorProfile] = role === "vendor"
     ? await sql()`SELECT status,name FROM marcada.vendor_integrations WHERE identity=${s.identity}`
     : [];
@@ -103,13 +90,7 @@ async function user(req) {
     linkedEmail: link?.email || null,
     sharedAccess:shared,
     governanceStatus: governance.status,
-    roleSource: shared.enrolled?(role==='vendor'||role==='customer'?'private-owner':'roles'):recoveryOwner
-      ? "protected_owner"
-      : governance.role
-        ? "governance"
-        : role === "customer"
-          ? "customer"
-          : "local",
+    roleSource:role==='vendor'||role==='customer'?'private-owner':'roles',
     role,
     owner,
     admin: owner || role === "admin",
@@ -904,7 +885,7 @@ export default async function handler(req, res) {
     }
     if (route === "admin/role" && req.method === "POST") {
       const identity = normalizeIdentity(body.identity);
-      if(u.sharedAccess?.enrolled&&body.role!=='vendor'&&!(body.role==='customer'&&(await sql()`SELECT role FROM marcada.roles WHERE identity=${identity}`)[0]?.role==='vendor'))return json(res,409,{error:'Manage shared staff roles at https://roles.bittrees.org. Vendor ownership remains in Mercado.'});
+      if(body.role!=='vendor'&&!(body.role==='customer'&&(await sql()`SELECT role FROM marcada.roles WHERE identity=${identity}`)[0]?.role==='vendor'))return json(res,409,{error:'Manage shared staff roles at https://roles.bittrees.org. Vendor ownership remains in Mercado.'});
       if (isAdmin(identity))
         return json(res, 400, { error: "Owner access is protected" });
       if (![...localRoles, "customer"].includes(body.role))
@@ -1017,12 +998,12 @@ export default async function handler(req, res) {
             ? sql()`SELECT * FROM marcada.vendor_integrations WHERE identity=${u.identity}`
             : [],
         governance: {
-          source: "https://gov.bittrees.org",
+          source: "https://roles.bittrees.org",
           mapping:
-            "Partner → Owner; Admin / Snapshot space admin → Administrator",
+            "Current scoped Roles staff permissions; private vendor ownership stays in Mercado",
         },
         roles: u.owner
-          ? sql()`SELECT identity,role FROM marcada.roles ORDER BY identity`
+          ? sql()`SELECT identity,role FROM marcada.roles WHERE role='vendor' ORDER BY identity`
           : [],
         offers: u.canDeals
           ? sql()`SELECT o.*,COALESCE((SELECT json_agg(g.identity) FROM marcada.offer_grants g WHERE g.offer_id=o.id),'[]') AS recipients FROM marcada.offers o ORDER BY o.created_at DESC`
