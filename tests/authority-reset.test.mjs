@@ -4,7 +4,15 @@ const valid=(actions,extra={})=>({enrolled:true,authoritative:true,actions,expir
 test('staff roles require current scoped authority, while private vendors retain ownership',()=>{
  for(const access of [undefined,valid([]),valid(['role.owner'],{enrolled:false}),valid(['role.owner'],{authoritative:false}),valid(['role.owner'],{expiresAt:0})])for(const local of ['owner','admin','dealer_manager','support','vendor','customer'])assert.equal(effectiveMercadoRole(access,local),local==='vendor'?'vendor':'customer');
  for(const role of ['owner','admin','dealer_manager','catalog_manager','offer_manager','support','vendor_manager'])assert.equal(effectiveMercadoRole(valid(['role.'+role.replaceAll('_','-')]),'customer'),role);
- assert.equal(effectiveMercadoRole(valid(['project.admin','tier.partner']),'customer'),'customer');
+ assert.equal(effectiveMercadoRole(valid(['project.admin','tier.partner']),'customer'),'admin');
+});
+test('project administration remains current and never grants ownership',()=>{
+ assert.equal(effectiveMercadoRole(valid(['project.admin']),'owner'),'admin');
+ assert.equal(effectiveMercadoRole(valid(['tier.partner']),'customer'),'customer');
+ for(const extra of [{enrolled:false},{authoritative:false},{expiresAt:0}]){
+  assert.equal(effectiveMercadoRole(valid(['project.admin'],extra),'admin'),'customer');
+  assert.equal(effectiveMercadoRole(valid(['project.admin'],extra),'vendor'),'vendor');
+ }
 });
 const bundle=await build({entryPoints:['api/index.mjs'],bundle:true,write:false,platform:'node',format:'esm',plugins:[{name:'fixture',setup(b){b.onResolve({filter:/^sharp$/},()=>({path:'image',namespace:'image-fixture'}));b.onLoad({filter:/.*/,namespace:'image-fixture'},()=>({contents:'export default ()=>{throw Error("Image processing is outside this authority test")};'}));b.onResolve({filter:/^@neondatabase\/serverless$/},()=>({path:'db',namespace:'fixture'}));b.onResolve({filter:/shared-roles\.mjs$/},()=>({path:'roles',namespace:'fixture'}));b.onLoad({filter:/.*/,namespace:'fixture'},a=>({contents:a.path==='db'?'export const neon=()=>globalThis.mercadoFixture.sql;':'export const sharedMercadoRoles=async()=>globalThis.mercadoFixture.access;export const effectiveMercadoRole=(...a)=>globalThis.mercadoFixture.effective(...a);'}));}}]});
 const {default:handler}=await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
