@@ -1,3 +1,4 @@
+import {freshnessRequest} from '../lib/freshness.mjs';
 import {createSsoClient,nodeRequest,nodeResponse,suppressSso} from '../shared/sso/client.mjs';
 import {sharedMercadoRoles,effectiveMercadoRole} from '../lib/shared-roles.mjs';
 import { coordinatorGrant, coordinatorRequest } from "../lib/coordinator.mjs";
@@ -155,6 +156,11 @@ export default async function handler(req, res) {
       (["admin/image", "images"].includes(route) ? 1500000 : 16000)
     )
       return json(res, 413, { error: "Request too large" });
+    if (route.startsWith("integrations/freshness/") && req.method === "POST") {
+      const grant = coordinatorGrant(req.headers.authorization, JSON.parse(process.env.MERCADO_FRESHNESS_GRANTS_JSON || "[]"));
+      await limited(req, "freshness:" + grant.identity, 150);
+      return json(res, 200, await freshnessRequest(sql(), grant, route.split("/").pop(), body));
+    }
     if (route.startsWith("integrations/coordinator/") && req.method === "POST") {
       const grant = coordinatorGrant(req.headers.authorization, [...JSON.parse(process.env.MERCADO_COORDINATOR_GRANTS_JSON || "[]"), ...JSON.parse(process.env.MERCADO_QUALIFIED_GRANTS_JSON || "[]")]);
       await limited(req, "coordinator:" + grant.identity, 40);
