@@ -192,7 +192,7 @@ function App() {
       if (request === accountRequest.current) setAccountLoading(false);
     }
   }
-useSharedSignIn(user?.identity);
+useSharedSignIn(user?.identity, !accountLoading);
   async function refresh() {
     await Promise.all([
       api("catalog").then((c) => {
