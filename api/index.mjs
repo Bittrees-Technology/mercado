@@ -120,7 +120,7 @@ async function sendCode(email, code) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: process.env.MAIL_FROM,
+      from: process.env.SIGNIN_EMAIL_FROM || process.env.MAIL_FROM,
       to: [email],
       subject: "Your Mercado sign-in code",
       text: `Your Mercado verification code is ${code}. It expires in 10 minutes and works once. If you did not request it, ignore this email.`,
