@@ -104,6 +104,9 @@ export function EquipmentPage({
     sort: "name",
   };
   const [filters, setFilters] = useState(defaults);
+  const activeFilterCount = Object.entries(filters).filter(
+    ([key, value]) => key !== "sort" && value !== defaults[key],
+  ).length;
   const [quantity, setQuantity] = useState("1");
   const setFilter = (key, value) => {
     setFilters((f) => ({
@@ -211,108 +214,114 @@ export function EquipmentPage({
         </nav>
       )}
       {!selected && (
-        <section className="catalog-filters" aria-label="Filter products">
-          <label>
-            Find a product
-            <input
-              type="search"
-              placeholder="Model, feature or supplier"
-              value={filters.query}
-              onChange={(e) => setFilter("query", e.target.value)}
-            />
-          </label>
-          <label>
-            Supplier market
-            <select
-              value={filters.market}
-              onChange={(e) => setFilter("market", e.target.value)}
-            >
-              <option>All</option>
-              <option value="US">United States</option>
-              <option value="EU">European Union</option>
-              <option value="UK">United Kingdom</option>
-              <option value="MX">Mexico</option>
-              <option value="CA">Canada</option>
-              <option value="CN">China</option>
-              <option value="Unverified">Unverified</option>
-            </select>
-          </label>
-          <label>
-            Supplier
-            <select
-              value={filters.supplier}
-              onChange={(e) => setFilter("supplier", e.target.value)}
-            >
-              <option>All</option>
-              {[...new Set(collectionItems.map((i) => i.source_name))]
-                .sort()
-                .map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-            </select>
-          </label>
-          <label>
-            Currency
-            <select
-              value={filters.currency}
-              onChange={(e) => setFilter("currency", e.target.value)}
-            >
-              <option>All</option>
-              {[...new Set(collectionItems.map((i) => i.currency))]
-                .sort()
-                .map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-            </select>
-          </label>
-          <label>
-            Supplier availability
-            <select
-              value={filters.availability}
-              onChange={(e) => setFilter("availability", e.target.value)}
-            >
-              <option>All</option>
-              <option value="InStock">Reported in stock</option>
-              <option value="OutOfStock">Reported out of stock</option>
-              <option value="Unknown">Not confirmed</option>
-            </select>
-          </label>
-          <label>
-            Maximum price
-            {filters.currency !== "All" ? " (" + filters.currency + ")" : ""}
-            <input
-              type="number"
-              min="0"
-              disabled={filters.currency === "All"}
-              value={filters.maxPrice}
-              placeholder={
-                filters.currency === "All" ? "Choose a currency" : "No maximum"
-              }
-              onChange={(e) => setFilter("maxPrice", e.target.value)}
-            />
-          </label>
-          <label>
-            Sort
-            <select
-              value={filters.sort}
-              onChange={(e) => setFilter("sort", e.target.value)}
-            >
-              <option value="name">Name</option>
-              <option value="price-asc" disabled={filters.currency === "All"}>
-                Price: low to high
-              </option>
-              <option value="price-desc" disabled={filters.currency === "All"}>
-                Price: high to low
-              </option>
-            </select>
-          </label>
-          <div className="filter-summary">
-            <span>
-              {list.length} of {collectionItems.length} offers
-            </span>
-            <button onClick={() => setFilters(defaults)}>Reset filters</button>
-          </div>
-        </section>
+        <details className="catalog-filter-disclosure">
+          <summary>
+            <span>Filters{activeFilterCount > 0 ? ` · ${activeFilterCount} active` : ""}</span>
+            <span className="catalog-filter-count">{list.length} offers</span>
+          </summary>
+          <section className="catalog-filters" aria-label="Filter products">
+            <label>
+              Find a product
+              <input
+                type="search"
+                placeholder="Model, feature or supplier"
+                value={filters.query}
+                onChange={(e) => setFilter("query", e.target.value)}
+              />
+            </label>
+            <label>
+              Supplier market
+              <select
+                value={filters.market}
+                onChange={(e) => setFilter("market", e.target.value)}
+              >
+                <option>All</option>
+                <option value="US">United States</option>
+                <option value="EU">European Union</option>
+                <option value="UK">United Kingdom</option>
+                <option value="MX">Mexico</option>
+                <option value="CA">Canada</option>
+                <option value="CN">China</option>
+                <option value="Unverified">Unverified</option>
+              </select>
+            </label>
+            <label>
+              Supplier
+              <select
+                value={filters.supplier}
+                onChange={(e) => setFilter("supplier", e.target.value)}
+              >
+                <option>All</option>
+                {[...new Set(collectionItems.map((i) => i.source_name))]
+                  .sort()
+                  .map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+              </select>
+            </label>
+            <label>
+              Currency
+              <select
+                value={filters.currency}
+                onChange={(e) => setFilter("currency", e.target.value)}
+              >
+                <option>All</option>
+                {[...new Set(collectionItems.map((i) => i.currency))]
+                  .sort()
+                  .map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+              </select>
+            </label>
+            <label>
+              Supplier availability
+              <select
+                value={filters.availability}
+                onChange={(e) => setFilter("availability", e.target.value)}
+              >
+                <option>All</option>
+                <option value="InStock">Reported in stock</option>
+                <option value="OutOfStock">Reported out of stock</option>
+                <option value="Unknown">Not confirmed</option>
+              </select>
+            </label>
+            <label>
+              Maximum price
+              {filters.currency !== "All" ? " (" + filters.currency + ")" : ""}
+              <input
+                type="number"
+                min="0"
+                disabled={filters.currency === "All"}
+                value={filters.maxPrice}
+                placeholder={
+                  filters.currency === "All" ? "Choose a currency" : "No maximum"
+                }
+                onChange={(e) => setFilter("maxPrice", e.target.value)}
+              />
+            </label>
+            <label>
+              Sort
+              <select
+                value={filters.sort}
+                onChange={(e) => setFilter("sort", e.target.value)}
+              >
+                <option value="name">Name</option>
+                <option value="price-asc" disabled={filters.currency === "All"}>
+                  Price: low to high
+                </option>
+                <option value="price-desc" disabled={filters.currency === "All"}>
+                  Price: high to low
+                </option>
+              </select>
+            </label>
+            <div className="filter-summary">
+              <span>
+                {list.length} of {collectionItems.length} offers
+              </span>
+              <button onClick={() => setFilters(defaults)}>Reset filters</button>
+            </div>
+          </section>
+        </details>
       )}
       {!selected && (
         <p className="comparison-note">

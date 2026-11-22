@@ -1302,15 +1302,34 @@ select:focus {
     padding-top: 25px;
   }
 }
+.catalog-filter-disclosure {
+  margin: 20px 0;
+  border: 1px solid var(--appearance-border, #dce3d3);
+  border-radius: 8px;
+  background: var(--appearance-surface, #f3f6ee);
+}
+.catalog-filter-disclosure > summary {
+  cursor: pointer;
+  padding: 14px 18px;
+  color: var(--appearance-text, #234c36);
+  font-size: 14px;
+  font-weight: 600;
+}
+.catalog-filter-disclosure > summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.catalog-filter-count {
+  float: right;
+  font-size: 12px;
+  font-weight: 400;
+}
 .catalog-filters {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 13px;
   padding: 20px;
-  border: 1px solid var(--appearance-border, #dce3d3);
-  border-radius: 8px;
-  margin: 24px 0;
-  background: var(--appearance-surface, #f3f6ee);
+  border-top: 1px solid var(--appearance-border, #dce3d3);
 }
 .catalog-filters label {
   display: flex;

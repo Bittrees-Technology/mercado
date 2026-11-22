@@ -45,6 +45,9 @@ try {
         offers: [],
       }),
     );
+    const filterDisclosure = html.match(/<details class="catalog-filter-disclosure"[^>]*>/)?.[0];
+    assert.ok(filterDisclosure, `Filters are available in ${c.id}`);
+    assert.doesNotMatch(filterDisclosure, /\sopen(?:[\s=>])/, `Filters start closed in ${c.id}`);
     assert.equal(
       (html.match(/class="real-product"/g) || []).length,
       Math.min(24, items.filter((p) => p.product_id === c.id).length),
