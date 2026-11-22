@@ -49,8 +49,8 @@ test("signed-in public browsing skips Roles and restricts offers to public listi
  };
  async function get(path) {
   let status, data;
-  await handler({ url: "/api/" + path, method: "GET", headers: { cookie: "__Host-mercado=fixture" } },
-   { setHeader() {}, status(s) { status = s; return this; }, json(d) { data = d; } });
+  await handler({ url: path.startsWith("/") ? path : "/api/" + path, method: "GET", headers: { cookie: "__Host-mercado=fixture" } },
+   { setHeader() {}, status(s) { status = s; return this; }, json(d) { data = d; }, end() {} });
   return { status, data };
  }
  try {
@@ -58,6 +58,7 @@ test("signed-in public browsing skips Roles and restricts offers to public listi
    identity: record.identity, referral: record.referral, theme: record.theme, avatar_url: undefined, avatar_cid: undefined,
   });
   assert.equal((await get("catalog?public=1")).status, 200);
+  assert.equal((await get("/auth/session-complete")).status, 204);
   assert.equal(authorizationChecks, 0);
   assert.deepEqual(offerQueries[0], [false, false, false, ""]);
   assert.equal((await get("private-offers")).status, 200);

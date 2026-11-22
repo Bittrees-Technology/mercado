@@ -183,7 +183,8 @@ export default async function handler(req, res) {
     }
  if(route==='shared-roles-health'&&req.method==='GET')return json(res,200,{protocol:'bittrees-roles-ecosystem-v1',project:'mercado',configured:!!process.env.ROLES_ECOSYSTEM_REQUEST_PRIVATE_KEY&&!!process.env.ROLES_ECOSYSTEM_DECISION_PUBLIC_KEY});
 
- if (route === "sso-complete" && req.method === "GET") {
+ if (req.method === "GET" &&
+     (url.pathname === "/auth/session-complete" || route === "sso-complete")) {
    return res.status(204).end();
  }
  if(route.startsWith('sso/')){
