@@ -199,8 +199,15 @@ function App() {
     }
   }
   async function refresh(full = protectedPage || Boolean(user?.role)) {
+    const url = new URL(location.href);
+    const [page, collection] = url.pathname.split("/").filter(Boolean);
+    const catalogQuery = new URLSearchParams({ public: "1" });
+    if (page !== "equipment" || !url.searchParams.has("preview")) {
+      catalogQuery.set("compact", "1");
+      if (page === "equipment" && collection) catalogQuery.set("collection", collection);
+    }
     await Promise.all([
-      api("catalog?public=1").then((c) => {
+      api("catalog?" + catalogQuery).then((c) => {
         setProducts(c.products); setOffers(c.offers); setItems(c.items || []);
       }).finally(() => setLoading(false)),
       loadAccount(full),

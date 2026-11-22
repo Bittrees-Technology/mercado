@@ -2,6 +2,7 @@ import { VisibilityAction, ProductHistory, ProductTable } from "./ProductControl
 import { ProgressiveProducts } from "./ProgressiveProducts.jsx";
 import { CsvImport } from "./CsvImport.jsx";
 import {
+  collectionItems,
   comparisonKey,
   groupCatalog,
   sortVendorOffers,
@@ -21,7 +22,7 @@ export const equipmentLink = (id, ref = "", item = "") =>
   id +
   (item ? "/" + item : "") +
   (ref ? "?ref=" + encodeURIComponent(ref) : "");
-export function ProductImage({ item }) {
+export function ProductImage({ item, priority = false }) {
   const [failed, setFailed] = useState(false);
   return failed || !item.image_url ? (
     <div className="photo-missing">Product photo pending</div>
@@ -29,7 +30,8 @@ export function ProductImage({ item }) {
     <img
       src={item.image_url}
       alt={item.name}
-      loading="lazy"
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : undefined}
       decoding="async"
       referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
@@ -154,16 +156,8 @@ export function EquipmentPage({
         </a>
       </section>
     );
-  const ownItems = items.filter((i) => i.product_id === domain.id);
-  const ownGroups = new Set(
-    ownItems.filter((i) => i.model_group).map(comparisonKey),
-  );
-  const collectionItems = items.filter(
-    (i) =>
-      i.product_id === domain.id ||
-      (i.model_group && ownGroups.has(comparisonKey(i))),
-  );
-  const list = filterCatalog(collectionItems, filters);
+  const candidates = collectionItems(items, domain.id);
+  const list = filterCatalog(candidates, filters);
   const groups = groupCatalog(list);
   const alternatives = selected
     ? items.filter((i) => comparisonKey(i) === comparisonKey(selected))
@@ -252,7 +246,7 @@ export function EquipmentPage({
                 onChange={(e) => setFilter("supplier", e.target.value)}
               >
                 <option>All</option>
-                {[...new Set(collectionItems.map((i) => i.source_name))]
+                {[...new Set(candidates.map((i) => i.source_name))]
                   .sort()
                   .map((v) => (
                     <option key={v}>{v}</option>
@@ -266,7 +260,7 @@ export function EquipmentPage({
                 onChange={(e) => setFilter("currency", e.target.value)}
               >
                 <option>All</option>
-                {[...new Set(collectionItems.map((i) => i.currency))]
+                {[...new Set(candidates.map((i) => i.currency))]
                   .sort()
                   .map((v) => (
                     <option key={v}>{v}</option>
@@ -316,7 +310,7 @@ export function EquipmentPage({
             </label>
             <div className="filter-summary">
               <span>
-                {list.length} of {collectionItems.length} offers
+                {list.length} of {candidates.length} offers
               </span>
               <button onClick={() => setFilters(defaults)}>Reset filters</button>
             </div>
@@ -343,7 +337,7 @@ export function EquipmentPage({
       {selected ? (
         <div className="item-detail">
           <div className="real-photo">
-            <ProductImage key={selected.image_url} item={selected} />
+            <ProductImage key={selected.image_url} item={selected} priority />
             <small>{selected.image_credit}</small>
           </div>
           <div>

@@ -37,6 +37,12 @@ test("signed-in public browsing skips Roles and restricts offers to public listi
  const record = { identity: "member@example.invalid", referral: "abc123", theme: "light", role: "owner" };
  let authorizationChecks = 0;
  const offerQueries = [];
+ const catalog = [
+  { id: "gamma", product_id: "bitaxe", name: "Gamma", model_group: "Bitaxe Gamma", price: 100 },
+  { id: "gamma-alt", product_id: "asic", name: "Gamma alternative", model_group: " bitaxe  gamma ", price: 110 },
+  { id: "server", product_id: "servers", name: "Server", model_group: "", price: 900 },
+ ];
+ const directory = catalog.map(({ id, product_id, name }) => ({ id, product_id, name }));
  globalThis.mercadoFixture = {
   effective: effectiveMercadoRole,
   get access() { authorizationChecks++; return valid(["project.admin"]); },
@@ -44,6 +50,10 @@ test("signed-in public browsing skips Roles and restricts offers to public listi
    const q = strings.join("?");
    if (q.includes("FROM marcada.sessions s JOIN")) return [record];
    if (q.includes("FROM marcada.offers o")) offerQueries.push(values);
+   if (q.includes("FROM marcada.items")) {
+    assert.match(q, /WHERE active AND deleted_at IS NULL/);
+    return q.includes("SELECT id,product_id,name FROM") ? directory : catalog;
+   }
    return [];
   },
  };
@@ -57,13 +67,17 @@ test("signed-in public browsing skips Roles and restricts offers to public listi
   assert.deepEqual((await get("session")).data.user, {
    identity: record.identity, referral: record.referral, theme: record.theme, avatar_url: undefined, avatar_cid: undefined,
   });
-  assert.equal((await get("catalog?public=1")).status, 200);
+  assert.deepEqual((await get("catalog?public=1")).data.items, catalog);
+  assert.deepEqual((await get("catalog?public=1&compact=1")).data.items, directory);
+  assert.deepEqual((await get("catalog?public=1&compact=1&collection=bitaxe")).data.items,
+   [catalog[0], catalog[1], directory[2]]);
+  assert.deepEqual((await get("catalog?public=1&compact=1&collection=missing")).data.items, directory);
   assert.equal((await get("/auth/session-complete")).status, 204);
   assert.equal(authorizationChecks, 0);
   assert.deepEqual(offerQueries[0], [false, false, false, ""]);
   assert.equal((await get("private-offers")).status, 200);
   assert.equal(authorizationChecks, 1);
-  assert.deepEqual(offerQueries[1], [true, true, true, record.identity]);
+  assert.deepEqual(offerQueries.at(-1), [true, true, true, record.identity]);
  } finally {
   delete globalThis.mercadoFixture;
  }

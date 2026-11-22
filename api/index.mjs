@@ -24,6 +24,7 @@ import {
 } from "../lib/notifications.mjs";
 import { localRoles, permissions } from "../lib/permissions.mjs";
 import { itemInput, imageUpload } from "../lib/catalog.mjs";
+import { collectionItems } from "../lib/group-catalog.mjs";
 import { neon } from "@neondatabase/serverless";
 import { randomUUID, randomInt } from "node:crypto";
 import { createPublicClient, http } from "viem";
@@ -216,16 +217,26 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true });
     }
     if (route === "catalog" && req.method === "GET") {
-      const u = url.searchParams.get("public") === "1" ? null : await user(req);
+      const publicOnly = url.searchParams.get("public") === "1";
+      const compact = publicOnly && url.searchParams.get("compact") === "1";
+      const collection = url.searchParams.get("collection");
+      const u = publicOnly ? null : await user(req);
       const [products, offers, items] = await Promise.all([
         sql()`SELECT * FROM marcada.products WHERE active ORDER BY CASE WHEN id='bitaxe' THEN 0 ELSE 1 END,name`,
         catalogOffers(u),
-        sql()`SELECT id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status,updated_at FROM marcada.items WHERE active AND deleted_at IS NULL ORDER BY product_id,name`,
+        compact && !collection
+          ? sql()`SELECT id,product_id,name FROM marcada.items WHERE active AND deleted_at IS NULL ORDER BY product_id,name`
+          : sql()`SELECT id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status,updated_at FROM marcada.items WHERE active AND deleted_at IS NULL ORDER BY product_id,name`,
       ]);
+      // Other collections keep the names and IDs needed by the quote picker.
+      const fullItems = compact && collection ? new Set(collectionItems(items, collection)) : null;
       return json(res, 200, {
         products,
         offers,
-        items,
+        items: fullItems ? items.map((item) => {
+          const { id, product_id, name } = item;
+          return fullItems.has(item) ? item : { id, product_id, name };
+        }) : items,
         commerce: { checkout: false, delivery: false },
       });
     }

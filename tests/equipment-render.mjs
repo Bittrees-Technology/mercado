@@ -58,6 +58,8 @@ try {
         html.lastIndexOf('class="real-product"'),
     );
     assert.ok(html.includes("/equipment/" + c.id + "/"));
+    assert.ok(html.includes('loading="lazy"'));
+    assert.ok(!html.includes('fetchPriority="high"'));
   }
   for (const item of items) {
     globalThis.location = {
@@ -78,6 +80,7 @@ try {
     if (["bitaxe", "asic"].includes(item.product_id))
       assert.ok(html.includes(item.hashrate || "Confirm with supplier"));
     assert.ok(html.includes(item.image_url));
+    assert.match(html, /loading="eager" fetchPriority="high"/);
     assert.ok(html.includes("Request a purchase quote"));
     assert.ok(html.includes(item.currency));
     assert.ok(html.includes('aria-label="Quantity to request"'));
