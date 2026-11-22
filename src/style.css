@@ -1109,15 +1109,6 @@ select:focus {
   background: #254b36;
   color: white;
 }
-.price-note {
-  background: var(--appearance-surface, #edf1e6);
-  border-radius: 6px;
-  padding: 15px 20px;
-  color: var(--appearance-muted, #5c7051);
-  font-size: 12px;
-  line-height: 1.6;
-  margin: 24px 0 32px;
-}
 .real-photo {
   display: flex;
   align-items: center;

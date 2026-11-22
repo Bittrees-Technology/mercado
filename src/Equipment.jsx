@@ -314,11 +314,6 @@ export function EquipmentPage({
           </div>
         </section>
       )}
-      <p className="price-note">
-        Supplier prices are dated references, not confirmed hub stock. Nevada
-        and Portugal coordinate sourcing. Final configuration, taxes and
-        delivery are confirmed in your quote.
-      </p>
       {!selected && (
         <p className="comparison-note">
           Matching models are grouped by configuration and condition. Vendor
