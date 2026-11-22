@@ -4,7 +4,7 @@ import { LoginPanel, EmailSignIn, EthereumSignIn } from "./shared/login/LoginPan
 import { pageMeta } from "../lib/seo.mjs";
 import {ProfileImage} from "./ImageUpload.jsx";
 import { useAppearance } from "./useAppearance.jsx";
-import { useAccountNavigation } from "./useAccountNavigation.jsx";
+import { isAccountPath, useAccountNavigation } from "./useAccountNavigation.jsx";
 import { ReferralPanel } from "./ReferralPanel.jsx";
 import { NotificationPage } from "./NotificationPage.jsx";
 import { WalletPicker } from "./WalletPicker.jsx";
@@ -123,6 +123,7 @@ function App() {
   const initialRoute = useRef(true);
   const accountRequest = useRef(0);
   const [accountLoading, setAccountLoading] = useState(true);
+  const [shareNativeSession, setShareNativeSession] = useState(false);
   const quoteAttempt = useRef(null);
   const [signingProvider, setSigningProvider] = useState(null);
   const [products, setProducts] = useState([]),
@@ -192,7 +193,13 @@ function App() {
       if (request === accountRequest.current) setAccountLoading(false);
     }
   }
-useSharedSignIn(user?.identity, !accountLoading);
+  // Opening a public link shouldn't initiate a top-level sign-in handoff.
+  useSharedSignIn(
+    user?.identity,
+    !accountLoading &&
+      (isAccountPath(location.pathname) || (!user && modal === "login") ||
+        Boolean(user && shareNativeSession)),
+  );
   async function refresh() {
     await Promise.all([
       api("catalog").then((c) => {
@@ -341,6 +348,7 @@ useSharedSignIn(user?.identity, !accountLoading);
       });
       const signature = await signWalletMessage(provider, address, message);
       await api("auth/wallet", { message, signature });
+      setShareNativeSession(true);
       setSigningProvider(provider);
       await refresh();
       close();
@@ -788,7 +796,7 @@ useSharedSignIn(user?.identity, !accountLoading);
                 {notice}
               </p>
             )}
-            {modal === "login" && <LoginPanel product="Mercado" email={<EmailSignIn email={email} onEmailChange={setEmail} challenge={challenge} busy={busy} onReset={()=>setChallenge('')} onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);run(async()=>{if(challenge){await api('auth/verify-email',{challenge,code:f.get('code')});await refresh();close();}else{const r=await api('auth/email',{email});setChallenge(r.challenge);setNotice(r.message);}});}}/>} wallet={<EthereumSignIn busy={busy} onClick={()=>open('login-wallet')}/>} footer={<p>Sign in to request quotes, create referral links and access deals shared with you.</p>}/>}
+            {modal === "login" && <LoginPanel product="Mercado" email={<EmailSignIn email={email} onEmailChange={setEmail} challenge={challenge} busy={busy} onReset={()=>setChallenge('')} onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);run(async()=>{if(challenge){await api('auth/verify-email',{challenge,code:f.get('code')});setShareNativeSession(true);await refresh();close();}else{const r=await api('auth/email',{email});setChallenge(r.challenge);setNotice(r.message);}});}}/>} wallet={<EthereumSignIn busy={busy} onClick={()=>open('login-wallet')}/>} footer={<p>Sign in to request quotes, create referral links and access deals shared with you.</p>}/>}
             {modal === 'login-wallet' && <><h2>Choose your Ethereum wallet</h2><WalletPicker busy={busy} onChoose={wallet}/><button type="button" onClick={()=>open('login')}>Back to sign in</button></>}
             {modal === "link-wallet" && user?.identity.includes("@") && (
               <>
