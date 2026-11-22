@@ -166,7 +166,7 @@ for (const [engine, name] of [
       if (url.origin !== base) return route.fulfill({ status: 204 });
       if (url.pathname === "/api/catalog")
         return route.fulfill({ json: { products, items, offers: [] } });
-      if (url.pathname === "/api/me")
+      if (["/api/me", "/api/session"].includes(url.pathname))
         return route.fulfill(
           signedIn
             ? { json: { user: owner, quotes: [] } }

@@ -32,3 +32,38 @@ test('signed feed retains private vendors and role definitions without resurrect
  const old={...process.env},keys=generateKeyPairSync('ed25519');process.env.ROLES_FEED_PRIVATE_KEY=keys.privateKey.export({format:'pem',type:'pkcs8'});process.env.ROLES_FEED_SUBJECT_SECRET='x'.repeat(40);process.env.ADMIN_EMAIL='legacy@example.invalid';process.env.ADMIN_WALLET='0x'+'1'.repeat(40);
  try{const rows=[{identity:'vendor@example.invalid',role:'vendor'},{identity:'legacy@example.invalid',role:'dealer_manager'}],snapshot=structuredClone(rows);const feed=await readRoleFeed(async()=>rows);assert(verify(null,Buffer.from(JSON.stringify(feed.data)),keys.publicKey,Buffer.from(feed.signature,'base64')));assert.deepEqual(Object.values(feed.data.roles).flat().map(x=>x.label),['vendor']);assert(feed.data.roledefs.some(x=>x.label==='owner'));assert.deepEqual(rows,snapshot);assert(!JSON.stringify(feed.data).includes('vendor@example.invalid'));}finally{for(const k of Object.keys(process.env))if(!(k in old))delete process.env[k];Object.assign(process.env,old)}
 });
+
+test("signed-in public browsing skips Roles and restricts offers to public listings", async () => {
+ const record = { identity: "member@example.invalid", referral: "abc123", theme: "light", role: "owner" };
+ let authorizationChecks = 0;
+ const offerQueries = [];
+ globalThis.mercadoFixture = {
+  effective: effectiveMercadoRole,
+  get access() { authorizationChecks++; return valid(["project.admin"]); },
+  sql: async (strings, ...values) => {
+   const q = strings.join("?");
+   if (q.includes("FROM marcada.sessions s JOIN")) return [record];
+   if (q.includes("FROM marcada.offers o")) offerQueries.push(values);
+   return [];
+  },
+ };
+ async function get(path) {
+  let status, data;
+  await handler({ url: "/api/" + path, method: "GET", headers: { cookie: "__Host-mercado=fixture" } },
+   { setHeader() {}, status(s) { status = s; return this; }, json(d) { data = d; } });
+  return { status, data };
+ }
+ try {
+  assert.deepEqual((await get("session")).data.user, {
+   identity: record.identity, referral: record.referral, theme: record.theme, avatar_url: undefined, avatar_cid: undefined,
+  });
+  assert.equal((await get("catalog?public=1")).status, 200);
+  assert.equal(authorizationChecks, 0);
+  assert.deepEqual(offerQueries[0], [false, false, false, ""]);
+  assert.equal((await get("private-offers")).status, 200);
+  assert.equal(authorizationChecks, 1);
+  assert.deepEqual(offerQueries[1], [true, true, true, record.identity]);
+ } finally {
+  delete globalThis.mercadoFixture;
+ }
+});

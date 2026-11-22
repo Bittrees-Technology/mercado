@@ -1,5 +1,5 @@
 import {SharedProfileCard} from "../shared/sso/SharedProfileCard.jsx";
-import {useSharedSignIn} from "../shared/sso/useSharedSignIn.jsx";
+import { backgroundSignIn } from "./backgroundSignIn.mjs";
 import { LoginPanel, EmailSignIn, EthereumSignIn } from "./shared/login/LoginPanel.jsx";
 import { pageMeta } from "../lib/seo.mjs";
 import {ProfileImage} from "./ImageUpload.jsx";
@@ -122,12 +122,13 @@ function App() {
   const { route, navigate } = useAccountNavigation();
   const initialRoute = useRef(true);
   const accountRequest = useRef(0);
+  const sharedResume = useRef(null);
   const [accountLoading, setAccountLoading] = useState(true);
-  const [shareNativeSession, setShareNativeSession] = useState(false);
   const quoteAttempt = useRef(null);
   const [signingProvider, setSigningProvider] = useState(null);
   const [products, setProducts] = useState([]),
     [offers, setOffers] = useState([]),
+    [privateOffers, setPrivateOffers] = useState(null),
     [items, setItems] = useState([]),
     [pendingQuote, setPendingQuote] = useState(null),
     [user, setUser] = useState(null),
@@ -165,27 +166,31 @@ function App() {
   const [selected, setSelected] = useState(
     initial.searchParams.get("product") || "",
   );
-  async function loadAccount() {
+  const protectedPage = isAccountPath(initial.pathname) ||
+    (/^\/equipment\/[^/]+\/[^/]+\/?$/.test(initial.pathname) && initial.searchParams.has("preview"));
+  async function loadAccount(full = protectedPage, signal) {
     const request = ++accountRequest.current;
+    const stale = () => request !== accountRequest.current || signal?.aborted;
     setAccountLoading(true);
     try {
       if (location.pathname.startsWith("/admin")) {
         try {
           const data = await api("admin");
-          if (request !== accountRequest.current) return;
+          if (stale()) return;
           setUser(data.user); setAdmin(data);
           if (modal === "account") {
             const account = await api("me");
-            if (request === accountRequest.current) setQuotes(account.quotes);
+            if (!stale()) setQuotes(account.quotes);
           }
-          return;
+          return data.user;
         } catch (e) { if (e.status !== 403) throw e; }
       }
-      const m = await api("me");
-      if (request !== accountRequest.current) return;
-      setUser(m.user); setQuotes(m.quotes);
+      const m = await api(full ? "me" : "session");
+      if (stale()) return;
+      setUser(m.user); setQuotes(m.quotes || []);
+      return m.user;
     } catch (e) {
-      if (request !== accountRequest.current) return;
+      if (stale()) return;
       setAdmin(null);
       if (e.status === 401) { setUser(null); setQuotes([]); }
       else setError(e.message);
@@ -193,27 +198,30 @@ function App() {
       if (request === accountRequest.current) setAccountLoading(false);
     }
   }
-  // Opening a public link shouldn't initiate a top-level sign-in handoff.
-  useSharedSignIn(
-    user?.identity,
-    !accountLoading &&
-      (isAccountPath(location.pathname) || (!user && modal === "login") ||
-        Boolean(user && shareNativeSession)),
-  );
-  async function refresh() {
+  async function refresh(full = protectedPage || Boolean(user?.role)) {
     await Promise.all([
-      api("catalog").then((c) => {
+      api("catalog?public=1").then((c) => {
         setProducts(c.products); setOffers(c.offers); setItems(c.items || []);
       }).finally(() => setLoading(false)),
-      loadAccount(),
+      loadAccount(full),
     ]);
   }
   useEffect(() => {
     if (initialRoute.current) { initialRoute.current = false; return; }
+    cancelSharedResume();
     setAdmin(null); setModal(null); setError(""); setNotice("");
     loadAccount();
     return () => { accountRequest.current++; };
   }, [route]);
+  useEffect(() => {
+    if (modal !== "deals" || !user?.identity) return;
+    let active = true;
+    setPrivateOffers(null);
+    api("private-offers")
+      .then(({ offers }) => { if (active) setPrivateOffers(offers); })
+      .catch((e) => { if (active) { setPrivateOffers([]); setError(e.message); } });
+    return () => { active = false; };
+  }, [modal, user?.identity]);
   useEffect(() => {
     if (!modal) return;
     const previous = document.activeElement;
@@ -297,22 +305,55 @@ function App() {
   async function openAdmin() {
     navigate("/admin");
   }
+  function cancelSharedResume() {
+    sharedResume.current?.abort();
+    sharedResume.current = null;
+  }
   function close() {
+    cancelSharedResume();
     setModal(null);
     setError("");
     setNotice("");
   }
   function open(value) {
-    if (value === "account" && user) {
-      const identity = user.identity, request = accountRequest.current;
-      api("me").then((m) => {
-        if (request === accountRequest.current && m.user?.identity === identity) { setUser(m.user); setQuotes(m.quotes); }
-      }).catch((e) => setError(e.message));
-    }
+    cancelSharedResume();
     if (value?.type === "quote") quoteAttempt.current = null;
     setModal(value);
     setError("");
     setNotice("");
+    if (value === "account" && user) void loadAccount(true);
+    if (value === "deals") setPrivateOffers(null);
+    if (value !== "login" || user) return;
+    const controller = new AbortController();
+    sharedResume.current = controller;
+    void backgroundSignIn("resume", controller.signal).then(async (attempted) => {
+      if (!attempted || controller.signal.aborted) return;
+      const account = await loadAccount(true, controller.signal);
+      if (account && !controller.signal.aborted) {
+        setModal((current) => current === "login" ? null : current);
+        setNotice("");
+      }
+    });
+  }
+  async function finishLocalSignIn() {
+    await loadAccount(true);
+    close();
+    void backgroundSignIn("publish");
+  }
+  function submitEmailSignIn(event) {
+    event.preventDefault();
+    cancelSharedResume();
+    const form = new FormData(event.currentTarget);
+    void run(async () => {
+      if (challenge) {
+        await api("auth/verify-email", { challenge, code: form.get("code") });
+        await finishLocalSignIn();
+      } else {
+        const result = await api("auth/email", { email });
+        setChallenge(result.challenge);
+        setNotice(result.message);
+      }
+    });
   }
   async function share(product = "", item = "") {
     await run(async () => {
@@ -348,10 +389,8 @@ function App() {
       });
       const signature = await signWalletMessage(provider, address, message);
       await api("auth/wallet", { message, signature });
-      setShareNativeSession(true);
       setSigningProvider(provider);
-      await refresh();
-      close();
+      await finishLocalSignIn();
     });
   }
   async function linkWallet(provider) {
@@ -465,7 +504,7 @@ function App() {
       </div>
       </header>
       {themeError && <p className="appearance-error" role="alert">{themeError}</p>}
-      <main><SharedProfileCard sessionRevision={user?.identity}/>
+      <main>
         {accountLoading && !user && (location.pathname.startsWith("/admin") || location.pathname.startsWith("/account/notifications")) ? (
           <section className="equipment-page" role="status">Loading your workspace…</section>
         ) : location.pathname.startsWith("/account/notifications") ? (
@@ -796,7 +835,7 @@ function App() {
                 {notice}
               </p>
             )}
-            {modal === "login" && <LoginPanel product="Mercado" email={<EmailSignIn email={email} onEmailChange={setEmail} challenge={challenge} busy={busy} onReset={()=>setChallenge('')} onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);run(async()=>{if(challenge){await api('auth/verify-email',{challenge,code:f.get('code')});setShareNativeSession(true);await refresh();close();}else{const r=await api('auth/email',{email});setChallenge(r.challenge);setNotice(r.message);}});}}/>} wallet={<EthereumSignIn busy={busy} onClick={()=>open('login-wallet')}/>} footer={<p>Sign in to request quotes, create referral links and access deals shared with you.</p>}/>}
+            {modal === "login" && <LoginPanel product="Mercado" email={<EmailSignIn email={email} onEmailChange={setEmail} challenge={challenge} busy={busy} onReset={()=>setChallenge('')} onSubmit={submitEmailSignIn}/>} wallet={<EthereumSignIn busy={busy} onClick={()=>open('login-wallet')}/>} footer={<p>Sign in to request quotes, create referral links and access deals shared with you.</p>}/>}
             {modal === 'login-wallet' && <><h2>Choose your Ethereum wallet</h2><WalletPicker busy={busy} onChoose={wallet}/><button type="button" onClick={()=>open('login')}>Back to sign in</button></>}
             {modal === "link-wallet" && user?.identity.includes("@") && (
               <>
@@ -807,6 +846,7 @@ function App() {
             {modal === "account" && (
               <div className="account-panel">
                 <h2>Your account</h2>
+                <SharedProfileCard sessionRevision={user?.identity}/>
                 <div className="account-summary">
                   <p className="identity">{user?.identity}</p>
                   <span className="account-role">{user?.role === "admin" ? "Administrator" : user?.role?.replaceAll("_", " ")}</span>
@@ -1003,16 +1043,16 @@ function App() {
                   <button className="primary" onClick={() => open("login")}>
                     Sign in <ArrowRight size={18} />
                   </button>
-                ) : offers.filter((o) => o.private).length ? (
-                  offers
-                    .filter((o) => o.private)
-                    .map((o) => (
-                      <Offer
-                        key={o.id}
-                        offer={o}
-                        onQuote={() => quoteOffer(o)}
-                      />
-                    ))
+                ) : privateOffers === null ? (
+                  <p role="status">Loading private offers…</p>
+                ) : privateOffers.length ? (
+                  privateOffers.map((o) => (
+                    <Offer
+                      key={o.id}
+                      offer={o}
+                      onQuote={() => quoteOffer(o)}
+                    />
+                  ))
                 ) : (
                   <div className="empty">
                     <Lock size={26} />

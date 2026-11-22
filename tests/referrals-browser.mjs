@@ -37,7 +37,7 @@ try {
           json:
             url.pathname === "/api/catalog"
               ? { items, products, offers: [] }
-              : url.pathname === "/api/me"
+              : ["/api/me", "/api/session"].includes(url.pathname)
                 ? {
                     user: {
                       identity: "member@example.com",

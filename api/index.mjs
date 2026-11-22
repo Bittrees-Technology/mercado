@@ -61,19 +61,20 @@ async function limited(req, bucket, max) {
   if (r.count > max)
     throw Object.assign(Error("Please try again shortly."), { status: 429 });
 }
-async function user(req) {
+async function sessionRecord(req) {
   const key = cookie(req, "__Host-mercado");
   if (!key) return null;
   const [record] =
     await sql()`SELECT s.identity,u.referral,u.theme,u.avatar_url,u.avatar_cid,r.role,l.email,l.wallet FROM marcada.sessions s JOIN marcada.users u ON u.identity=s.identity LEFT JOIN marcada.roles r ON r.identity=s.identity LEFT JOIN marcada.identity_links l ON l.email=s.identity OR l.wallet=s.identity WHERE s.hash=${hash(key)} AND s.expires_at>now()`;
+  return record || null;
+}
+function sessionProfile({ identity, referral, theme, avatar_url, avatar_cid }) {
+  return { identity, referral, theme, avatar_url, avatar_cid };
+}
+async function user(req) {
+  const record = await sessionRecord(req);
   if (!record) return null;
-  const s = {
-    identity: record.identity,
-    referral: record.referral,
-    theme: record.theme,
-    avatar_url: record.avatar_url,
-    avatar_cid: record.avatar_cid,
-  };
+  const s = sessionProfile(record);
   const r = { role: record.role },
     link = { email: record.email, wallet: record.wallet };
   const shared=await sharedMercadoRoles(s.identity,link);
@@ -104,6 +105,9 @@ async function session(res, identity) {
   const value = token();
   await sql()`INSERT INTO marcada.sessions(hash,identity,expires_at) VALUES(${hash(value)},${identity},now()+interval '7 days')`;
   setCookie(res, "__Host-mercado", value, 604800);
+}
+function catalogOffers(user, privateOnly = false) {
+  return sql()`SELECT o.id,o.product_id,o.item_id,o.dealer,o.price,o.currency,o.private,o.expires_at FROM marcada.offers o WHERE o.active AND (o.expires_at IS NULL OR o.expires_at>now()) AND (NOT ${privateOnly} OR o.private) AND (NOT o.private OR (${Boolean(user)} AND (${user?.canDeals || false} OR EXISTS(SELECT 1 FROM marcada.offer_grants g WHERE g.offer_id=o.id AND g.identity=${user?.identity || ""}))))`;
 }
 async function audit(actor, action, detail) {
   await sql()`INSERT INTO marcada.audit(id,actor,action,detail) VALUES(${randomUUID()},${actor},${action},${detail})`;
@@ -179,6 +183,9 @@ export default async function handler(req, res) {
     }
  if(route==='shared-roles-health'&&req.method==='GET')return json(res,200,{protocol:'bittrees-roles-ecosystem-v1',project:'mercado',configured:!!process.env.ROLES_ECOSYSTEM_REQUEST_PRIVATE_KEY&&!!process.env.ROLES_ECOSYSTEM_DECISION_PUBLIC_KEY});
 
+ if (route === "sso-complete" && req.method === "GET") {
+   return res.status(204).end();
+ }
  if(route.startsWith('sso/')){
  const env=process.env,appOrigin=origin();
  const client=createSsoClient({clientId:'mercado',origin:appOrigin,issuer:env.BITTREES_SSO_ISSUER||'https://roles.bittrees.org',secret:env.BITTREES_SSO_CLIENT_SECRET,enabled:env.BITTREES_SSO_ENABLED==='1',adapter:{
@@ -208,10 +215,10 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true });
     }
     if (route === "catalog" && req.method === "GET") {
-      const u = await user(req);
+      const u = url.searchParams.get("public") === "1" ? null : await user(req);
       const [products, offers, items] = await Promise.all([
         sql()`SELECT * FROM marcada.products WHERE active ORDER BY CASE WHEN id='bitaxe' THEN 0 ELSE 1 END,name`,
-        sql()`SELECT o.id,o.product_id,o.item_id,o.dealer,o.price,o.currency,o.private,o.expires_at FROM marcada.offers o WHERE o.active AND (o.expires_at IS NULL OR o.expires_at>now()) AND (NOT o.private OR ${u?.canDeals || false} OR EXISTS(SELECT 1 FROM marcada.offer_grants g WHERE g.offer_id=o.id AND g.identity=${u?.identity || ""}))`,
+        catalogOffers(u),
         sql()`SELECT id,product_id,name,description,price,currency,price_kind,price_checked,source_url,source_name,image_url,image_credit,hashrate,model_group,specifications,active,supplier_region,tax_note,configuration_note,supplier_status,updated_at FROM marcada.items WHERE active AND deleted_at IS NULL ORDER BY product_id,name`,
       ]);
       return json(res, 200, {
@@ -344,8 +351,15 @@ export default async function handler(req, res) {
       setCookie(res, "__Host-mercado", "", 0);suppressSso(res,origin());
       return json(res, 200, { ok: true });
     }
+    if (route === "session" && req.method === "GET") {
+      const record = await sessionRecord(req);
+      return json(res, 200, { user: record ? sessionProfile(record) : null });
+    }
     const u = await user(req);
     if (!u) return json(res, 401, { error: "Sign in to continue" });
+    if (route === "private-offers" && req.method === "GET") {
+      return json(res, 200, { offers: await catalogOffers(u, true) });
+    }
     if (route === "referrals/new" && req.method === "POST") {
       await limited(req, "referral-code", 5);
       const code =

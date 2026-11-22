@@ -11,6 +11,10 @@
       "destination": "/api/seo?path=/sitemap.xml"
     },
     {
+      "source": "/auth/session-complete",
+      "destination": "/api/sso-complete"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/index"
     },
@@ -37,7 +41,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://insights.bittrees.org; style-src 'self' 'unsafe-inline' https://insights.bittrees.org; img-src 'self' data: https:; connect-src 'self' https://insights.bittrees.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+          "value": "default-src 'self'; script-src 'self' https://insights.bittrees.org; style-src 'self' 'unsafe-inline' https://insights.bittrees.org; img-src 'self' data: https:; connect-src 'self' https://insights.bittrees.org https://roles.bittrees.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
         }
       ]
     }
