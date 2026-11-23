@@ -1,4 +1,3 @@
-import {SharedProfileCard} from "../shared/sso/SharedProfileCard.jsx";
 import { backgroundSignIn } from "./backgroundSignIn.mjs";
 import { LoginPanel, EmailSignIn, EthereumSignIn } from "./shared/login/LoginPanel.jsx";
 import { pageMeta } from "../lib/seo.mjs";
@@ -853,7 +852,6 @@ function App() {
             {modal === "account" && (
               <div className="account-panel">
                 <h2>Your account</h2>
-                <SharedProfileCard sessionRevision={user?.identity}/>
                 <div className="account-summary">
                   <p className="identity">{user?.identity}</p>
                   <span className="account-role">{user?.role === "admin" ? "Administrator" : user?.role?.replaceAll("_", " ")}</span>
