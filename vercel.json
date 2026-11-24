@@ -42,6 +42,12 @@
       ]
     },
     {
+      "source": "/",
+      "headers": [
+        {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://insights.bittrees.org https://www.googletagmanager.com/gtag/; style-src 'self' 'unsafe-inline' https://insights.bittrees.org; img-src 'self' data: https:; connect-src 'self' https://insights.bittrees.org https://roles.bittrees.org https://*.google-analytics.com/g/collect; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"}
+      ]
+    },
+    {
       "source": "/(.+)",
       "headers": [
         {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://insights.bittrees.org; style-src 'self' 'unsafe-inline' https://insights.bittrees.org; img-src 'self' data: https:; connect-src 'self' https://insights.bittrees.org https://roles.bittrees.org; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"}

@@ -1,16 +1,9 @@
-import deployment from '../vercel.json' with {type:'json'};
 import { readFile } from 'node:fs/promises';
 import { neon } from '@neondatabase/serverless';
 import { pageMeta, headTags, initialContent, sitemap } from '../lib/seo.mjs';
-const securityPolicy=deployment.headers.flatMap(rule=>rule.headers)
- .find(header=>header.key==='Content-Security-Policy').value;
-const analyticsPolicy=securityPolicy
- .replace("script-src 'self' https://insights.bittrees.org;", "script-src 'self' https://insights.bittrees.org https://www.googletagmanager.com/gtag/;")
- .replace("https://roles.bittrees.org;", "https://roles.bittrees.org https://*.google-analytics.com/g/collect;");
 let template;
 export default async function handler(req,res) {
  res.setHeader('Cache-Control','no-store');
- res.setHeader('Content-Security-Policy',securityPolicy);
  try {
   template ||= await readFile(new URL('../dist/index.html',import.meta.url),'utf8');
   const url=new URL(req.url,'https://mercado.bittrees.org');
@@ -27,10 +20,6 @@ export default async function handler(req,res) {
   if(path==='/sitemap.xml') {res.setHeader('Content-Type','application/xml; charset=utf-8');return res.status(200).send(sitemap(products,items));}
   const meta=pageMeta(path,products,items,url.searchParams.has('preview'));
   if(meta.noindex)res.setHeader('X-Robots-Tag','noindex, nofollow');
-  if(path==='/' && meta.status===200 && !meta.noindex && req.headers.host==='mercado.bittrees.org'
-     && [...url.searchParams.keys()].every(key=>key==='path')) {
-   res.setHeader('Content-Security-Policy',analyticsPolicy);
-  }
   const html=template.replace(/<!-- SEO:START -->[\s\S]*?<!-- SEO:END -->/,'<!-- SEO -->').replace(/<title>[\s\S]*?<\/title>/,'').replace(/<meta\s+name="description"[\s\S]*?>/,'').replace(/<link rel="canonical"[^>]*>/,'').replace('<!-- SEO -->',headTags(meta)).replace(/<div id="root">[\s\S]*?<\/div>/,`<div id="root">${privatePage?'':initialContent(meta,products,items)}</div>`);
   res.setHeader('Content-Type','text/html; charset=utf-8');
   return res.status(meta.status).send(html);
