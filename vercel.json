@@ -44,7 +44,7 @@
     {
       "source": "/",
       "headers": [
-        {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://insights.bittrees.org https://www.googletagmanager.com/gtag/; style-src 'self' 'unsafe-inline' https://insights.bittrees.org; img-src 'self' data: https:; connect-src 'self' https://insights.bittrees.org https://roles.bittrees.org https://*.google-analytics.com/g/collect; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"}
+        {"key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://insights.bittrees.org https://www.googletagmanager.com/gtag/; style-src 'self' 'unsafe-inline' https://insights.bittrees.org; img-src 'self' data: https:; connect-src 'self' https://insights.bittrees.org https://roles.bittrees.org https://*.google-analytics.com/g/collect; frame-src https://insights.bittrees.org/analytics-preferences.html; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"}
       ]
     },
     {
